@@ -1,0 +1,29 @@
+<!DOCTYPE html><html lang="en">
+  <head>
+    <script src="fun.js"></script>
+    <script src="editor.js"></script>
+    <meta charset="utf-8">
+    <style>
+        .my_text
+        {
+            font-family:    Arial, Helvetica, sans-serif;
+            font-size:      14px;
+            font-weight:    bold;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="my_text">  
+      <br>
+      Fun is an esoteric subset of JavaScript that only uses function calls. <a href="https://esolangs.org/wiki/Fun">Learn More</a>
+      <br><br>
+      program:<br>  
+      <textarea id="code" rows="30" cols="80" style="font-size: 14pt">RUN(PRINT(D5()))</textarea>
+      <br>
+      <button type="button" onclick="run()">Run Program</button>
+      <br>
+      output:<br>   
+      <textarea id="output" rows="10" cols="80" style="font-size: 14pt" readonly></textarea><br>
+    </div>
+  </body>
+</html>
