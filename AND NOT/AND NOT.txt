@@ -1,0 +1,30 @@
+AND NOT
+-------
+
+AND NOT is a language in which we define a circuit made from AND NOT gates. 
+
+In AND NOT, we have outputs and inputs. Outputs are defined to be 1 or 0 initially, depending
+on a value given on the gate line. 
+
+First, we calculate Inputs by looking at outputs, and finding connected inputs, and copying values. 
+Then we calculate outputs by looking at Inputs, and performing ANO NOT Operations. 
+
+Output
+------
+The initial 1 that is available on an output gate is ignored. We begin counting generations
+from the end of the generation when the next value is generated. 
+
+Notation
+--------
+Each line in the AND NOT Machine program represents an AND NOT gate. With a, b and o ports, 
+and also an associated State.
+
+Examples
+========
+
+
+AND program
+-----------
+
+
+

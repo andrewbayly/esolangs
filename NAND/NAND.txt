@@ -1,0 +1,58 @@
+NAND
+----
+Maybe we call it NAND Machine.
+
+NAND is a low-level programming language which describes a circuit. The circuit consists of (modified) NAND gates. 
+In NAND, gates can have multiple inputs. The output is 0 if all inputs are 1, and 1 otherwise.
+
+A NAND program consists of one line containing some run parameters (described below), and a list of transitions.
+The transitions form a directed graph. Vertices are labeled with integers, and edges are listed with their two ends.
+
+The edges in the graph can hold a value, as can the vertices. The initial state of the edges is 1 and the vertices 
+are zero.
+
+Running the program
+-------------------
+The program proceeds by generations, beginning at generation 0. In each generation, we calculate new values of
+the vertices based on the values of the incoming edges, using the NAND formula described above. Then we take the
+values of the vertices, and create new values for the outgoing edges. 
+
+Run Parameters. 
+The first line of the program consists of the following parameters: 
+
+numberOfGenerations - number of generations to calculate before terminating.
+outputVertex
+generationsPerBit
+bitsPerWord
+
+These last three parameters together describe how to print output from the program. Beginning with the value generated
+at the end of generation 0, we wait generationsPerBit generations before reading a bit. We assemble the bits into a
+word based on the value in bitsPerWord. We then print the value of that word when it changes.
+
+Example program
+---------------
+
+Well ... looks like this one doesn't work!!! The only thing wrong with NAND machine is the that state needs
+to be defined on each edge and can't be assumed to be 1. 
+
+Also, we need to define what happens when a vertex has no input edges. What works is that the value is assumed to be 1. 
+Another idea - we disallow it! All vertices must have 1 or more incoming edges. 
+
+AND Program
+-----------
+AND program takes two 3-bit values, A and B, and prints out AND( A, B )
+
+
+Comparison between AND NOT machine and NAND Machine. 
+- NAND uses symmetric gates, which makes them simpler to manage, and also allows us to extend to 3- and 4- gates ( even
+though we don't yet know if these are useful or not)
+- NAND maps more easily to a simple directed graph
+- AND NOT makes life easier when we try to construct wires. 
+- Still not sure which makes for smaller gates, tho' I think NAND will win.
+
+- NAND machine has another problem - we can't make a single wire which does not invert. This means that we can't build 
+ an ANO NOT gate. 
+
+
+
+
