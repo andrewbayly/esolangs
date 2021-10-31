@@ -59,6 +59,8 @@ function Vertex(){
 }
 
 parse(prog2)
+var progStr = generate()
+parse(progStr)
 run()
 
 function reset(){ 
@@ -122,18 +124,18 @@ function run(str){
   var vertexMap = {}
 
   edges.forEach(e => {
-    e.in.id = 0
-    e.out.id = 0
+    e.in.id = -1
+    e.out.id = -1
   })
 
   var id = 0
   edges.forEach(e => { 
-    if(e.in.id == 0){ 
+    if(e.in.id == -1){ 
       e.in.id = id
       vertexMap[id] = e.in 
       id++
     }  
-    if(e.out.id == 0){ 
+    if(e.out.id == -1){ 
       e.out.id = id
       vertexMap[id] = e.out  
       id++
@@ -178,4 +180,31 @@ function run(str){
   }
 }
 
+function generate(){ 
 
+  edges.forEach(e => {
+    e.in.id = -1
+    e.out.id = -1
+  })
+    
+  var id = 0
+  edges.forEach(e => { 
+    if(e.in.id == -1){ 
+      e.in.id = id
+      id++
+    }  
+    if(e.out.id == -1){ 
+      e.out.id = id
+      id++
+    }  
+  })
+
+  var str = [runParams.outputVertex, runParams.cyclesPerBit, runParams.bitsPerByte, runParams.cyles].join(' ') + '\n'
+
+  edges.forEach(e => {
+    str += ( [e.in.id, e.out.id, e.state].join(' ') + '\n' ) 
+  })
+
+  console.log(str)
+  return str
+}
