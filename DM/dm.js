@@ -11,41 +11,6 @@ join(vertex1, vertex2) : joins two vertices Together
 edges = []
 runParams = {}
 
-var prog1 = `
-8 1 8 8
-0 1 0
-1 2 0
-2 3 1
-3 4 0
-4 5 1
-5 6 0
-6 7 1
-7 8 0
-`
-
-var prog2 = `
-16 1 8 16
-0 1 1
-1 2 1
-2 3 0
-4 5 1
-5 6 0
-6 7 1
-7 8 0
-7 8 0
-3 8 0
-3 9 0
-8 10 0
-9 10 0
-10 11 0
-11 12 0
-12 13 0
-13 14 0
-14 15 0
-15 16 0
-7 8 0
-8 10 0
-`
 
 function Edge(state){ 
   this.state = state
@@ -58,10 +23,7 @@ function Vertex(){
   this.out = []    
 }
 
-parse(prog2)
-var progStr = generate()
-parse(progStr)
-run()
+
 
 function reset(){ 
   edges = []
@@ -208,3 +170,49 @@ function generate(){
   console.log(str)
   return str
 }
+
+
+var prog1 = `
+8 1 8 8
+0 1 0
+1 2 0
+2 3 1
+3 4 0
+4 5 1
+5 6 0
+6 7 1
+7 8 0
+`
+
+var prog2 = `
+16 1 8 16
+0 1 1
+1 2 1
+2 3 0
+4 5 1
+5 6 0
+6 7 1
+7 8 0
+7 8 0
+3 8 0
+3 9 0
+8 10 0
+9 10 0
+10 11 0
+11 12 0
+12 13 0
+13 14 0
+14 15 0
+15 16 0
+7 8 0
+8 10 0
+`
+
+parse(prog2)
+var progStr = generate()
+parse(progStr)
+run()
+
+
+
+
