@@ -45,6 +45,8 @@ var prog2 = `
 13 14 0
 14 15 0
 15 16 0
+7 8 0
+8 10 0
 `
 
 function Edge(state){ 
@@ -129,7 +131,8 @@ function run(str){
     //for each vertex, inspect the in edges, and count the number with state 1.
     //if this number is 1, set the vertex state to 1, otherwise set it to zero.
     vertices.forEach(v => { 
-      v.state = v.in.filter(e => e.state == 1).length == 1 ? 1 : 0
+      var count = v.in.filter(e => e.state == 1).length
+      v.state = ( (count == 1) || (count == 2) ) ? 1 : 0
     })
 
     //for each edge, inspect the in vertex, and copy its state to the edge state.
