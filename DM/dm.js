@@ -4,9 +4,11 @@ parse(str) : reads a program from a string
 run() : runs the program that was read, or constructed. 
 generate() : generates a string representation of the program (code may not be identical to what was parsed)
 edge(state) : creates an edge, and returns a reference to it
-join(vertex1, vertex2) : joins two vertices Together
+combine(vertex1, vertex2) : combines two vertices
 ... other hi-level functions tbd ...
 */
+
+const { join } = require("path")
 
 edges = []
 runParams = {}
@@ -23,10 +25,15 @@ function Vertex(){
   this.out = []    
 }
 
-
-
 function reset(){ 
   edges = []
+}
+
+function setRunParams(outputVertex, cyclesPerBit, bitsPerByte, cycles){ 
+  runParams.outputVertex = outputVertex
+  runParams.cyclesPerBit = cyclesPerBit
+  runParams.bitsPerByte = bitsPerByte
+  runParams.cycles = cycles
 }
 
 function parse(str){ 
@@ -37,7 +44,7 @@ function parse(str){
   runParams.outputVertex = rp[0] - 0
   runParams.cyclesPerBit = rp[1] - 0
   runParams.bitsPerByte = rp[2] - 0
-  runParams.cyles = rp[3] - 0
+  runParams.cycles = rp[3] - 0
 
   var vertexMap = {}
   edges = []
@@ -111,7 +118,7 @@ function run(str){
     vertices.push(v)
   }
 
-  for(var cycle = 1; cycle <= runParams.cyles; cycle++){ 
+  for(var cycle = 1; cycle <= runParams.cycles; cycle++){ 
     //for each vertex, inspect the in edges, and count the number with state 1.
     //if this number is 1, set the vertex state to 1, otherwise set it to zero.
     vertices.forEach(v => { 
@@ -161,7 +168,7 @@ function generate(){
     }  
   })
 
-  var str = [runParams.outputVertex, runParams.cyclesPerBit, runParams.bitsPerByte, runParams.cyles].join(' ') + '\n'
+  var str = [runParams.outputVertex, runParams.cyclesPerBit, runParams.bitsPerByte, runParams.cycles].join(' ') + '\n'
 
   edges.forEach(e => {
     str += ( [e.in.id, e.out.id, e.state].join(' ') + '\n' ) 
@@ -170,6 +177,37 @@ function generate(){
   console.log(str)
   return str
 }
+
+function edge(state){ 
+  var e = new Edge(state)
+  e.in = new Vertex()
+  e.out = new Vertex()
+  
+  e.out.in.push(e) 
+  e.in.out.push(e) 
+
+  edges.push(e)  
+
+  return e 
+}
+
+function combine(v1, v2){ 
+
+  v2.in.forEach(e => {
+    v1.in.push(e)
+    e.out = v1
+  })     
+
+  v2.out.forEach(e => {
+    v1.out.push(e)
+    e.in = v1
+  })     
+}
+
+//------------------------------------------------------------------------------------------------------------
+
+
+
 
 
 var prog1 = `
@@ -208,10 +246,37 @@ var prog2 = `
 8 10 0
 `
 
+reset()
+
 parse(prog2)
 var progStr = generate()
 parse(progStr)
 run()
+
+reset()
+
+setRunParams(8, 1, 8, 8)
+
+var e0 = edge(0)
+var e1 = edge(0)
+var e2 = edge(1)
+var e3 = edge(0)
+var e4 = edge(1)
+var e5 = edge(0)
+var e6 = edge(1)
+var e7 = edge(0)
+
+combine(e0.out, e1.in)
+combine(e1.out, e2.in)
+combine(e2.out, e3.in)
+combine(e3.out, e4.in)
+combine(e4.out, e5.in)
+combine(e5.out, e6.in)
+combine(e6.out, e7.in)
+
+run()
+
+
 
 
 
