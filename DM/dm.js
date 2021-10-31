@@ -9,8 +9,6 @@ join(vertex1, vertex2) : joins two vertices Together
 */
 
 edges = []
-vertices = []
-vertexMap = {}
 runParams = {}
 
 var prog1 = `
@@ -65,8 +63,6 @@ run()
 
 function reset(){ 
   edges = []
-  vertices = []
-  vertexMap = {}
 }
 
 function parse(str){ 
@@ -79,9 +75,11 @@ function parse(str){
   runParams.bitsPerByte = rp[2] - 0
   runParams.cyles = rp[3] - 0
 
+  var vertexMap = {}
+  edges = []
+
   lines.forEach(x => { 
     var values = x.split(' ')
-    //console.log(values)
     var a = values[0] - 0 
     var b = values[1] - 0 
     var state = values[2] - 0 
@@ -93,7 +91,6 @@ function parse(str){
     }
     else {
       edge.in = new Vertex()
-      vertices.push(edge.in)
       vertexMap[a] = edge.in
     }
 
@@ -104,7 +101,6 @@ function parse(str){
       }
     else {
       edge.out = new Vertex()
-      vertices.push(edge.out)
       vertexMap[b] = edge.out        
     }
   
@@ -114,10 +110,6 @@ function parse(str){
 
   })  
 
-  //console.log(edges)
-  //console.log(vertices)
-  //console.log(vertexMap)
-
 }
 
 function run(str){ 
@@ -126,6 +118,34 @@ function run(str){
   var digitValue = 1
   var lastByte = 0
   var byte = 0
+
+  var vertexMap = {}
+
+  edges.forEach(e => {
+    e.in.id = 0
+    e.out.id = 0
+  })
+
+  var id = 0
+  edges.forEach(e => { 
+    if(e.in.id == 0){ 
+      e.in.id = id
+      vertexMap[id] = e.in 
+      id++
+    }  
+    if(e.out.id == 0){ 
+      e.out.id = id
+      vertexMap[id] = e.out  
+      id++
+    }  
+  })
+
+  var vertices = []
+
+  for(var id in vertexMap){ 
+    var v = vertexMap[id]
+    vertices.push(v)
+  }
 
   for(var cycle = 1; cycle <= runParams.cyles; cycle++){ 
     //for each vertex, inspect the in edges, and count the number with state 1.
