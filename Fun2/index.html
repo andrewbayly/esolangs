@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fun2 Interpreter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a2e;
+    color: #e0e0f0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 24px 32px 16px;
+    border-bottom: 1px solid #2a2a4a;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: normal;
+    color: #a0c4ff;
+    letter-spacing: 0.05em;
+  }
+
+  header h1 span {
+    color: #ffd166;
+  }
+
+  header p {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: #7070a0;
+  }
+
+  header p a {
+    color: #a0c4ff;
+    text-decoration: none;
+  }
+
+  header p a:hover {
+    text-decoration: underline;
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .panel-label {
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7070a0;
+    background: #16162a;
+    border-bottom: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .divider {
+    width: 1px;
+    background: #2a2a4a;
+  }
+
+  textarea {
+    flex: 1;
+    background: #12121f;
+    color: #e0e0f0;
+    border: none;
+    outline: none;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    resize: none;
+    tab-size: 2;
+  }
+
+  textarea::selection {
+    background: #2a4a8a;
+  }
+
+  #output {
+    color: #a0ffb0;
+    background: #0e0e1a;
+  }
+
+  .toolbar {
+    padding: 12px 32px;
+    background: #16162a;
+    border-top: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  button {
+    background: #ffd166;
+    color: #1a1a2e;
+    border: none;
+    padding: 8px 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #ffe08a;
+  }
+
+  #clear-btn {
+    background: transparent;
+    color: #7070a0;
+    border: 1px solid #2a2a4a;
+  }
+
+  #clear-btn:hover {
+    color: #a0a0c0;
+    border-color: #4a4a7a;
+    background: transparent;
+  }
+
+  #error {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    flex: 1;
+  }
+
+  .examples {
+    padding: 8px 32px;
+    background: #16162a;
+    border-top: 1px solid #2a2a4a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .examples span {
+    font-size: 0.75rem;
+    color: #7070a0;
+    letter-spacing: 0.05em;
+  }
+
+  .example-btn {
+    background: transparent;
+    color: #a0c4ff;
+    border: 1px solid #2a2a5a;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: normal;
+    letter-spacing: 0;
+  }
+
+  .example-btn:hover {
+    background: #1e1e3a;
+    color: #c0d8ff;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fun<span>2</span></h1>
+  <p>An esoteric Lisp dialect in JavaScript &mdash; <a href="https://esolangs.org/wiki/Fun2">esolangs.org/wiki/Fun2</a></p>
+</header>
+
+<div class="main">
+  <div class="panel">
+    <div class="panel-label">
+      <span>Program</span>
+    </div>
+    <textarea id="code" spellcheck="false"></textarea>
+  </div>
+  <div class="divider"></div>
+  <div class="panel">
+    <div class="panel-label">
+      <span>Output</span>
+    </div>
+    <textarea id="output" readonly spellcheck="false"></textarea>
+  </div>
+</div>
+
+<div class="toolbar">
+  <button id="run-btn">RUN</button>
+  <button id="clear-btn">Clear output</button>
+  <span id="error"></span>
+</div>
+
+<div class="examples">
+  <span>Examples:</span>
+  <button class="example-btn" data-example="print">Print</button>
+  <button class="example-btn" data-example="factorial">Factorial</button>
+  <button class="example-btn" data-example="fibonacci">Fibonacci</button>
+  <button class="example-btn" data-example="fold">Fold</button>
+  <button class="example-btn" data-example="map">Map</button>
+</div>
+
+<script src="fun2-sexpr.js"></script>
+<script src="fun2-interp.js"></script>
+<script>
+
+var EXAMPLES = {
+  print: `RUN(
+  _(DISP(), D5())
+)`,
+
+  factorial: `RUN(
+  _(DEF(), F(),
+    _(_(N()),
+      _(IF(), _(EQ(), N(), D0()),
+        D1(),
+        _(MUL(), N(), _(F(), _(SUB(), N(), D1())))
+      )
+    )
+  ),
+  _(DISP(), _(F(), D5()))
+)`,
+
+  fibonacci: `RUN(
+  _(DEF(), F(),
+    _(_(N()),
+      _(IF(), _(LT(), N(), D2()),
+        N(),
+        _(ADD(),
+          _(F(), _(SUB(), N(), D1())),
+          _(F(), _(SUB(), N(), D2()))
+        )
+      )
+    )
+  ),
+  _(DISP(), _(F(), NUM(D1(),D0())))
+)`,
+
+  fold: `RUN(
+  _(DEF(), R(),
+    _(_(F(), A(), L()),
+      _(IF(), _(NULL(), L()),
+        A(),
+        _(R(),
+          F(),
+          _(F(), A(), _(HEAD(), L())),
+          _(TAIL(), L())
+        )
+      )
+    )
+  ),
+  _(DISP(), _(R(), ADD(), D0(), _(QUOTE(), _(D1(), D2(), D3(), D4(), D5())))),
+  _(DISP(), _(R(), MUL(), D1(), _(QUOTE(), _(D1(), D2(), D3(), D4(), D5()))))
+)`,
+
+  map: `RUN(
+  _(DEF(), D(),
+    _(_(N()),
+      _(MUL(), N(), D2())
+    )
+  ),
+  _(DEF(), M(),
+    _(_(F(), L()),
+      _(IF(), _(NULL(), L()),
+        _(QUOTE(), _()),
+        _(CONS(),
+          _(F(), _(HEAD(), L())),
+          _(M(), F(), _(TAIL(), L()))
+        )
+      )
+    )
+  ),
+  _(DISP(), _(M(), D(), _(QUOTE(), _(D1(), D2(), D3(), D4(), D5()))))
+)`
+}
+
+document.getElementById('code').value = EXAMPLES.factorial
+
+document.querySelectorAll('.example-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var key = btn.getAttribute('data-example')
+    document.getElementById('code').value = EXAMPLES[key]
+    document.getElementById('error').textContent = ''
+  })
+})
+
+document.getElementById('clear-btn').addEventListener('click', function() {
+  document.getElementById('output').value = ''
+  document.getElementById('error').textContent = ''
+})
+
+function validate(code) {
+  var valid = new Set([
+    'D0','D1','D2','D3','D4','D5','D6','D7','D8','D9',
+    'NUM',
+    'A','B','C','D','E','F','G','H','I','J','K','L','M',
+    'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+    'TOK','LIST','_',
+    'RUN',
+    'CONS','HEAD','TAIL','ADD','SUB','MUL','DIV','MOD',
+    'EQ','LT','GT','NOT','IF','DEF','QUOTE','DISP','NULL'
+  ])
+  var tokens = code
+    .replace(/[(),]/g, ' ')
+    .split(/\s+/)
+    .filter(function(t){ return t !== '' })
+  var bad = tokens.filter(function(t){ return !valid.has(t) })
+  return bad.length === 0 ? null : bad[0]
+}
+
+document.getElementById('run-btn').addEventListener('click', function() {
+  var code = document.getElementById('code').value
+  var errorEl = document.getElementById('error')
+  errorEl.textContent = ''
+
+  var bad = validate(code)
+  if (bad !== null) {
+    errorEl.textContent = 'Invalid token: ' + bad
+    return
+  }
+
+  ENV = [makeEnv()]
+  try {
+    eval(code)
+  } catch(e) {
+    errorEl.textContent = e.message
+  }
+})
+
+</script>
+</body>
+</html>
