@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Square</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: monospace; background: #fff; color: #111; padding: 2rem; max-width: 800px; margin: 0 auto; }
+h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.5rem; }
+.tabs { display: flex; border-bottom: 1px solid #ddd; margin-bottom: 1.5rem; }
+.tab { padding: 8px 20px; font-size: 13px; font-family: monospace; background: none; border: none; border-bottom: 2px solid transparent; color: #888; cursor: pointer; }
+.tab.active { color: #111; border-bottom-color: #111; }
+.section { display: none; }
+.section.active { display: block; }
+.label { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+textarea { width: 100%; font-family: monospace; font-size: 13px; background: #f7f7f7; border: 1px solid #ddd; border-radius: 4px; padding: 12px; resize: vertical; min-height: 80px; color: #111; line-height: 1.6; }
+textarea:focus { outline: none; border-color: #999; }
+select { font-family: monospace; font-size: 12px; padding: 7px 10px; border: 1px solid #ddd; border-radius: 4px; background: #f7f7f7; color: #111; cursor: pointer; }
+button { font-family: monospace; font-size: 12px; padding: 7px 16px; border: 1px solid #ddd; border-radius: 4px; background: none; color: #111; cursor: pointer; }
+button:hover { background: #f7f7f7; }
+button.primary { background: #111; color: #fff; border-color: #111; }
+button.primary:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+pre.grid { font-family: monospace; font-size: 13px; background: #f7f7f7; border: 1px solid #ddd; border-radius: 4px; padding: 14px; white-space: pre; overflow-x: auto; line-height: 1.6; }
+.out { font-family: monospace; font-size: 12px; background: #f7f7f7; border: 1px solid #ddd; border-radius: 4px; padding: 12px; min-height: 40px; white-space: pre-wrap; word-break: break-all; color: #555; line-height: 1.6; }
+.out.ok { color: #1a7a1a; border-color: #9fd09f; }
+.out.err { color: #b00; border-color: #f5a0a0; }
+.out.warn { color: #885500; border-color: #e0c060; }
+.stat { font-size: 11px; color: #aaa; }
+hr { border: none; border-top: 1px solid #eee; margin: 1.25rem 0; }
+.step { display: flex; gap: 10px; margin-bottom: 6px; }
+.step-n { font-size: 11px; color: #aaa; min-width: 18px; padding-top: 2px; }
+.step-b { font-size: 13px; color: #555; line-height: 1.6; }
+.step-b code { font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+.note { font-size: 13px; color: #555; line-height: 1.7; background: #f7f7f7; border: 1px solid #ddd; border-radius: 4px; padding: 12px 14px; margin-top: 4px; }
+.sec-head { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: .08em; margin: 16px 0 6px; }
+</style>
+</head>
+<body>
+
+<h1>Square &mdash; <a href="https://esolangs.org/wiki/Square" target="_blank" style="color:#555;font-size:14px;font-weight:400;text-decoration:none;border-bottom:1px solid #ccc;">esolangs.org/wiki/Square</a></h1>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('encode')">Encoder</button>
+  <button class="tab" onclick="showTab('decode')">Interpreter</button>
+  <button class="tab" onclick="showTab('spec')">Language spec</button>
+</div>
+
+<div class="section active" id="tab-encode">
+  <div class="row">
+    <select id="enc-example" onchange="loadExample()">
+      <option value="">Examples...</option>
+      <option value="hello">Hello world</option>
+      <option value="primes_ungolf">Primes (ungolfable, ~15 sec, unreliable)</option>
+      <option value="primes_golf">Primes (golfed, ~13 hours)</option>
+      <option value="primes_min">Primes (minified, age of universe)</option>
+      <option value="primes_fmt">Primes (formatted, much longer)</option>
+    </select>
+  </div>
+  <div class="label">JavaScript source</div>
+  <textarea id="enc-src" rows="5">console.log('hello')</textarea>
+  <div class="row" style="margin-top:10px">
+    <button class="primary" onclick="runEncode()">Encode</button>
+    <span class="stat" id="enc-stat"></span>
+  </div>
+  <div id="enc-out" style="display:none">
+    <hr>
+    <div class="label">Escaped source</div>
+    <div class="out" id="enc-escaped"></div>
+    <div style="margin-top:12px" class="label">Blocks (<span id="enc-n"></span> blocks &middot; <span id="enc-layout"></span> grid)</div>
+    <div class="out" id="enc-blocks"></div>
+    <div style="margin-top:12px" class="label">Square program</div>
+    <pre class="grid" id="enc-grid"></pre>
+    <div class="row" style="margin-top:10px">
+      <button onclick="copyGrid()">Copy</button>
+      <button onclick="sendToDecoder()">Send to interpreter</button>
+    </div>
+  </div>
+</div>
+
+<div class="section" id="tab-decode">
+  <div class="label">Square program</div>
+  <textarea id="dec-src" rows="8" placeholder="Paste a Square program, or use Send to interpreter from the encoder"></textarea>
+  <div class="row" style="margin-top:10px">
+    <button class="primary" onclick="runDecode()" id="dec-btn">Interpret</button>
+    <button onclick="stopDecode()" id="dec-stop" style="display:none">Stop</button>
+    <span class="stat" id="dec-stat"></span>
+  </div>
+  <div id="dec-out" style="display:none">
+    <hr>
+    <div class="label">Parsed blocks (<span id="dec-n"></span>)</div>
+    <div class="out" id="dec-parsed"></div>
+    <div style="margin-top:12px" class="label">Search progress</div>
+    <div class="out" id="dec-progress"></div>
+    <div style="margin-top:12px" class="label">Recovered source</div>
+    <div class="out" id="dec-source"></div>
+    <div style="margin-top:12px" class="label">Execution output</div>
+    <div class="out" id="dec-exec"></div>
+  </div>
+</div>
+
+<div class="section" id="tab-spec">
+  <div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:16px">Square is an esolang where obfuscation is a block permutation puzzle. Programs are valid JavaScript encoded as a shuffled rectangular grid of 3x3 character blocks.</div>
+
+  <div class="sec-head">Encoder</div>
+  <div class="step"><div class="step-n">1.</div><div class="step-b">Escape: <code>\s</code> space, <code>\n</code> newline, <code>\t</code> tab, <code>\\</code> backslash</div></div>
+  <div class="step"><div class="step-n">2.</div><div class="step-b">Pad escaped source with <code>#</code> to a multiple of 9</div></div>
+  <div class="step"><div class="step-n">3.</div><div class="step-b">Cut into N blocks of 9 chars and shuffle randomly</div></div>
+  <div class="step"><div class="step-n">4.</div><div class="step-b">Find the squarest rectangle: factor pair (W, H) of N with W &le; H minimising |W&minus;H|</div></div>
+  <div class="step"><div class="step-n">5.</div><div class="step-b">Output H row-groups of W blocks side by side, separated by blank lines</div></div>
+
+  <div class="sec-head">Interpreter</div>
+  <div class="step"><div class="step-n">1.</div><div class="step-b">Split on blank lines to get row-groups; split each group's 3 lines on spaces to recover N blocks</div></div>
+  <div class="step"><div class="step-n">2.</div><div class="step-b">Search all N! permutations with Heap's algorithm</div></div>
+  <div class="step"><div class="step-n">3.</div><div class="step-b">Unescape each candidate and attempt to compile as JavaScript</div></div>
+  <div class="step"><div class="step-n">4.</div><div class="step-b">First valid compilation wins &mdash; execute it</div></div>
+
+  <div class="sec-head">Execution semantics</div>
+  <div class="note">The interpreter executes the first permutation whose unescaped content is syntactically valid JavaScript. This is not guaranteed to be the original program. Any permutation that happens to form valid JavaScript &mdash; however semantically unrelated &mdash; is a legitimate execution. For short programs this ambiguity is common; for long programs it is astronomically unlikely. The language is inherently probabilistic: encoding a program does not guarantee its recovery.</div>
+
+  <div class="sec-head">Complexity</div>
+  <div class="step"><div class="step-n">N!</div><div class="step-b">Search space grows superexponentially. Hello world = 6 perms (instant). Primes ungolfable = 10! = 3.6 million (~15 sec, unreliable). Primes golfed = 13! = 6.2 billion (~13 hours, measured). Primes minified = 20! (age of universe). Primes formatted = 36! (vastly longer).</div></div>
+</div>
+
+<script>
+var BLOCK = 9;
+var COLS = 3;
+var BATCH = 2000;
+var _lastBlocks = null;
+var stopFlag = false;
+
+var EXAMPLES = {
+  hello: "console.log('hello')",
+  primes_ungolf: "p='';for(n=2;Y=n<542;n++){for(i=2;i<n;n%i++?0:Y=0);Y?p+=(n>2?', ':'')+n:0}console.log(p)",
+  primes_golf: "p=[];for(n=2;p.length<100;n++){Y=1;for(i=2;i<n;i++){if(n%i==0){Y=0;break}}if(Y)p.push(n)}console.log(p.join(', '))",
+  primes_min: "const primes=[];for(let n=2;primes.length<100;n++){let ok=true;for(let i=2;i*i<=n;i++){if(n%i===0){ok=false;break;}}if(ok)primes.push(n);}console.log(primes.join(', '));",
+  primes_fmt: "const primes = [];\nfor (let n = 2; primes.length < 100; n++) {\n  let ok = true;\n  for (let i = 2; i * i <= n; i++) {\n    if (n % i === 0) {\n      ok = false;\n      break;\n    }\n  }\n  if (ok) primes.push(n);\n}\nconsole.log(primes.join(', '));"
+};
+
+function loadExample() {
+  var key = document.getElementById('enc-example').value;
+  if (!key) return;
+  document.getElementById('enc-src').value = EXAMPLES[key];
+  document.getElementById('enc-out').style.display = 'none';
+  _lastBlocks = null;
+}
+
+function escSrc(s) {
+  var out = '';
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    if (ch === '\\') out += '\\\\';
+    else if (ch === ' ') out += '\\s';
+    else if (ch === '\n') out += '\\n';
+    else if (ch === '\t') out += '\\t';
+    else out += ch;
+  }
+  return out;
+}
+
+function unescSrc(s) {
+  var out = '';
+  var i = 0;
+  while (i < s.length) {
+    var ch = s[i];
+    if (ch === '\\' && i + 1 < s.length) {
+      var n = s[i + 1];
+      if (n === 's') { out += ' '; i += 2; }
+      else if (n === 'n') { out += '\n'; i += 2; }
+      else if (n === 't') { out += '\t'; i += 2; }
+      else if (n === '\\') { out += '\\'; i += 2; }
+      else { out += ch; i++; }
+    } else if (ch === '#') {
+      i++;
+    } else {
+      out += ch; i++;
+    }
+  }
+  return out;
+}
+
+function toBlocks(escaped) {
+  var padded = escaped;
+  while (padded.length % BLOCK !== 0) padded += '#';
+  var blocks = [];
+  for (var i = 0; i < padded.length; i += BLOCK) blocks.push(padded.slice(i, i + BLOCK));
+  return blocks;
+}
+
+function bestLayout(n) {
+  var bestW = 1, bestH = n;
+  for (var w = 1; w * w <= n; w++) {
+    if (n % w === 0) {
+      var h = n / w;
+      if (Math.abs(w - h) < Math.abs(bestW - bestH)) { bestW = w; bestH = h; }
+    }
+  }
+  return { w: bestW, h: bestH };
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function renderGrid(blocks) {
+  var layout = bestLayout(blocks.length);
+  var w = layout.w, h = layout.h;
+  var rowGroups = [];
+  for (var row = 0; row < h; row++) {
+    var rowBlocks = blocks.slice(row * w, (row + 1) * w);
+    var lines = [];
+    for (var line = 0; line < COLS; line++) {
+      var parts = [];
+      for (var bi = 0; bi < rowBlocks.length; bi++) {
+        parts.push(rowBlocks[bi].slice(line * COLS, (line + 1) * COLS));
+      }
+      lines.push(parts.join(' '));
+    }
+    rowGroups.push(lines.join('\n'));
+  }
+  return rowGroups.join('\n\n');
+}
+
+function parseGrid(gridStr) {
+  var normalised = gridStr.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  var rowGroups = normalised.split(/\n\n+/);
+  var blocks = [];
+  for (var gi = 0; gi < rowGroups.length; gi++) {
+    var lines = rowGroups[gi].split('\n');
+    var nonEmpty = [];
+    for (var li = 0; li < lines.length; li++) {
+      if (lines[li].length > 0) nonEmpty.push(lines[li]);
+    }
+    if (nonEmpty.length !== COLS) return null;
+    var w = nonEmpty[0].split(' ').length;
+    for (var col = 0; col < w; col++) {
+      var block = '';
+      for (var row = 0; row < COLS; row++) {
+        var parts = nonEmpty[row].split(' ');
+        var seg = parts[col] || '';
+        while (seg.length < COLS) seg += '#';
+        block += seg.slice(0, COLS);
+      }
+      blocks.push(block);
+    }
+  }
+  return blocks;
+}
+
+function isValidJS(src) {
+  try { new Function(src); return true; } catch(e) { return false; }
+}
+
+function factorial(n) {
+  var r = BigInt(1);
+  for (var i = BigInt(2); i <= BigInt(n); i++) r *= i;
+  return r;
+}
+
+function makeHeaps(n) {
+  var c = [], a = [];
+  for (var i = 0; i < n; i++) { c.push(0); a.push(i); }
+  var i = 0;
+  var first = true;
+  return {
+    next: function() {
+      if (first) { first = false; return { done: false, value: a }; }
+      while (i < n) {
+        if (c[i] < i) {
+          var tmp;
+          if (i % 2 === 0) { tmp = a[0]; a[0] = a[i]; a[i] = tmp; }
+          else { tmp = a[c[i]]; a[c[i]] = a[i]; a[i] = tmp; }
+          c[i]++; i = 0;
+          return { done: false, value: a };
+        } else { c[i] = 0; i++; }
+      }
+      return { done: true };
+    }
+  };
+}
+
+function showTab(name) {
+  var names = ['encode', 'decode', 'spec'];
+  var tabs = document.querySelectorAll('.tab');
+  var sections = document.querySelectorAll('.section');
+  for (var i = 0; i < names.length; i++) {
+    tabs[i].classList.toggle('active', names[i] === name);
+    sections[i].classList.toggle('active', names[i] === name);
+  }
+}
+
+function runEncode() {
+  var src = document.getElementById('enc-src').value;
+  if (!src.trim()) return;
+  var escaped = escSrc(src);
+  var blocks = toBlocks(escaped);
+  var layout = bestLayout(blocks.length);
+  var shuffled = shuffle(blocks);
+  var grid = renderGrid(shuffled);
+
+  _lastBlocks = shuffled.slice();
+
+  document.getElementById('enc-escaped').textContent = escaped;
+  document.getElementById('enc-n').textContent = blocks.length;
+  document.getElementById('enc-layout').textContent = layout.w + 'x' + layout.h;
+  var blockLines = [];
+  for (var i = 0; i < blocks.length; i++) blockLines.push('[' + i + '] "' + blocks[i] + '"');
+  document.getElementById('enc-blocks').textContent = blockLines.join('\n');
+  document.getElementById('enc-grid').textContent = grid;
+  document.getElementById('enc-stat').textContent = blocks.length + ' blocks -> ' + factorial(blocks.length).toLocaleString() + ' permutations';
+  document.getElementById('enc-out').style.display = '';
+}
+
+function copyGrid() {
+  var g = document.getElementById('enc-grid').textContent;
+  navigator.clipboard.writeText(g).catch(function() {});
+}
+
+function sendToDecoder() {
+  var g = document.getElementById('enc-grid').textContent;
+  document.getElementById('dec-src').value = g;
+  showTab('decode');
+  runDecodeWithBlocks(_lastBlocks);
+}
+
+function runDecode() {
+  var src = document.getElementById('dec-src').value;
+  if (!src.trim()) return;
+  var blocks = parseGrid(src);
+  if (!blocks || blocks.length === 0) {
+    document.getElementById('dec-out').style.display = '';
+    document.getElementById('dec-parsed').textContent = 'Could not parse - each row-group must be exactly 3 lines, separated by blank lines.';
+    document.getElementById('dec-parsed').className = 'out err';
+    return;
+  }
+  runDecodeWithBlocks(blocks);
+}
+
+function runDecodeWithBlocks(blocks) {
+  if (!blocks || blocks.length === 0) return;
+
+  document.getElementById('dec-out').style.display = '';
+  document.getElementById('dec-n').textContent = blocks.length;
+  document.getElementById('dec-parsed').className = 'out';
+  var blockLines = [];
+  for (var i = 0; i < blocks.length; i++) blockLines.push('[' + i + '] "' + blocks[i] + '"');
+  document.getElementById('dec-parsed').textContent = blockLines.join('\n');
+  document.getElementById('dec-source').textContent = '';
+  document.getElementById('dec-source').className = 'out';
+  document.getElementById('dec-exec').textContent = '';
+  document.getElementById('dec-exec').className = 'out';
+  document.getElementById('dec-btn').disabled = true;
+  document.getElementById('dec-stop').style.display = '';
+  stopFlag = false;
+
+  var total = factorial(blocks.length);
+  var progEl = document.getElementById('dec-progress');
+  progEl.className = 'out';
+  progEl.textContent = 'Starting search...';
+  var checked = BigInt(0);
+  var startTime = Date.now();
+  var iter = makeHeaps(blocks.length);
+
+  function tick() {
+    var count = 0;
+    while (count < BATCH) {
+      if (stopFlag) { finish('stopped', null); return; }
+      var r = iter.next();
+      if (r.done) { finish(null, null); return; }
+      var perm = r.value;
+      var assembled = '';
+      for (var i = 0; i < perm.length; i++) assembled += blocks[perm[i]];
+      var unescaped = unescSrc(assembled);
+      if (isValidJS(unescaped)) {
+        finish(null, { perm: perm.slice(), unescaped: unescaped });
+        return;
+      }
+      checked++;
+      count++;
+    }
+    var elapsed = (Date.now() - startTime) / 1000;
+    var rate = elapsed > 0 ? Number(checked) / elapsed : 0;
+    var remaining = rate > 0 ? (Number(total - checked) / rate) : 0;
+    var etaStr = '';
+    if (rate > 0) {
+      if (remaining < 60) etaStr = Math.round(remaining) + 's remaining';
+      else if (remaining < 3600) etaStr = Math.round(remaining / 60) + 'min remaining';
+      else if (remaining < 86400) etaStr = (remaining / 3600).toFixed(1) + 'hr remaining';
+      else etaStr = (remaining / 86400).toFixed(1) + ' days remaining';
+    }
+    progEl.textContent = 'Tried ' + checked.toLocaleString() + ' / ' + total.toLocaleString() + ' permutations' + (etaStr ? ' · ' + etaStr : '') + '...';
+    setTimeout(tick, 0);
+  }
+
+  function finish(stopped, result) {
+    document.getElementById('dec-btn').disabled = false;
+    document.getElementById('dec-stop').style.display = 'none';
+
+    if (stopped) {
+      progEl.textContent = 'Stopped after ' + checked.toLocaleString() + ' permutations.';
+      document.getElementById('dec-source').textContent = 'Search stopped.';
+      document.getElementById('dec-source').className = 'out warn';
+      return;
+    }
+    if (!result) {
+      progEl.textContent = 'Exhausted all ' + total.toLocaleString() + ' permutations.';
+      document.getElementById('dec-source').textContent = 'No valid JavaScript found in any permutation.';
+      document.getElementById('dec-source').className = 'out err';
+      return;
+    }
+
+    progEl.textContent = 'Found after ' + checked.toLocaleString() + ' / ' + total.toLocaleString() + ' permutations. Permutation: [' + result.perm.join(', ') + ']';
+    document.getElementById('dec-source').textContent = result.unescaped;
+    document.getElementById('dec-source').className = 'out ok';
+
+    var logs = [];
+    var origLog = console.log, origErr = console.error;
+    try {
+      console.log = function() {
+        var args = [];
+        for (var i = 0; i < arguments.length; i++) args.push(String(arguments[i]));
+        logs.push(args.join(' '));
+      };
+      console.error = function() {
+        var args = ['[error]'];
+        for (var i = 0; i < arguments.length; i++) args.push(String(arguments[i]));
+        logs.push(args.join(' '));
+      };
+      new Function(result.unescaped)();
+    } catch(e) {
+      logs.push('[runtime error] ' + e.message);
+    } finally {
+      console.log = origLog;
+      console.error = origErr;
+    }
+    document.getElementById('dec-exec').textContent = logs.length ? logs.join('\n') : '(no output)';
+  }
+
+  setTimeout(tick, 0);
+}
+
+function stopDecode() { stopFlag = true; }
+</script>
+</body>
+</html>
