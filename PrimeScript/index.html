@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrimeScript</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f8f8f6;
+      --surface: #ffffff;
+      --surface-2: #f1f0ec;
+      --border: #e0deda;
+      --border-strong: #c8c5bf;
+      --text: #1a1a18;
+      --text-muted: #7a7870;
+      --accent: #2563eb;
+      --accent-bg: #eff6ff;
+      --success: #16a34a;
+      --success-bg: #f0fdf4;
+      --warn-bg: #fffbeb;
+      --warn-border: #d97706;
+      --radius: 8px;
+      --mono: 'Courier New', Courier, monospace;
+    }
+
+    body {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+    .sub { font-size: 14px; color: var(--text-muted); margin-bottom: 2rem; }
+
+    .section { margin-bottom: 1.5rem; }
+
+    .label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    textarea {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      resize: vertical;
+      line-height: 1.6;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); }
+
+    select {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--accent); }
+
+    .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+
+    button {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 8px 18px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    button:hover:not(:disabled) { background: var(--surface-2); }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.sm { font-size: 12px; padding: 6px 12px; }
+
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .stat {
+      background: var(--surface-2);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+    .stat-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+    .stat-val { font-size: 14px; font-weight: 600; }
+
+    .output-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+      word-break: break-all;
+      line-height: 1.6;
+      min-height: 60px;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+    .output-box.has-value { color: var(--text); }
+
+    .status { font-size: 12px; color: var(--text-muted); }
+    .status.working { color: var(--accent); }
+    .status.done { color: var(--success); }
+    .status.err { color: #dc2626; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+    .decode-section { }
+
+    .counter-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .counter { font-size: 22px; font-weight: 600; color: var(--accent); margin: 6px 0 4px; }
+
+    .progress {
+      width: 100%; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 8px 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s;
+    }
+    .phase { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+    .code-wrap { margin-top: 1.25rem; }
+    .code-window {
+      background: #1e1e2e;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .warn {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      background: var(--warn-bg);
+      border-left: 3px solid var(--warn-border);
+      padding: 10px 14px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin-top: 1.5rem;
+    }
+
+    /* syntax highlight */
+    .kw  { color: #cba6f7; }
+    .fn  { color: #89b4fa; }
+    .str { color: #a6e3a1; }
+    .pun { color: #94e2d5; }
+    .num { color: #fab387; }
+    .cm  { color: #6c7086; font-style: italic; }
+    .pl  { color: #cdd6f4; }
+
+    footer {
+      margin-top: 3rem;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>PrimeScript</h1>
+  <p class="sub">N = m × P &nbsp;·&nbsp; one integer, one unfactorable program</p>
+
+  <div class="section">
+    <div class="label">JavaScript source</div>
+    <textarea id="src" rows="5">console.log('Hello World');</textarea>
+  </div>
+
+  <div class="controls">
+    <label class="label" for="bits" style="margin:0;">P bit length</label>
+    <select id="bits" onchange="onBitsChange()">
+      <option value="16">16-bit (instant — proof of concept)</option>
+      <option value="32" selected>32-bit (demo — seconds to minutes)</option>
+      <option value="64">64-bit (~years, classical)</option>
+      <option value="128">128-bit (~millions of years)</option>
+      <option value="256">256-bit (~10¹⁵ years)</option>
+      <option value="512">512-bit (~10³⁰ years)</option>
+      <option value="1024">1024-bit (~10⁵⁰ years)</option>
+      <option value="2048">2048-bit (~10²⁰ core-years, >> age of universe)</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <button id="encBtn" onclick="encode()">Encode ↗</button>
+    <span class="status" id="encStatus"></span>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">m (source bytes)</div><div class="stat-val" id="stat-m">—</div></div>
+    <div class="stat"><div class="stat-label">P (bits)</div><div class="stat-val" id="stat-p">—</div></div>
+    <div class="stat"><div class="stat-label">N (decimal digits)</div><div class="stat-val" id="stat-n">—</div></div>
+    <div class="stat"><div class="stat-label">Classical factoring</div><div class="stat-val" id="stat-hard">—</div></div>
+  </div>
+
+  <div class="section">
+    <div class="label">N — the encoded program</div>
+    <div class="output-box" id="output">Encode a program to see N here.</div>
+  </div>
+
+  <div class="row">
+    <button class="sm" id="copyNBtn" onclick="copyN()" disabled>Copy N</button>
+    <button class="sm" id="copyPBtn" onclick="copyP()" disabled>Copy P (for decoder)</button>
+    <span class="status" id="copyStatus"></span>
+  </div>
+
+  <hr>
+
+  <div class="decode-section">
+    <div class="label">Decode</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Available at 16-bit and 32-bit. Higher bit lengths are the point.</div>
+
+    <div class="row">
+      <button id="decBtn" onclick="startDecode()" disabled>Decode N ↗</button>
+      <span class="status" id="decStatus"></span>
+    </div>
+
+    <div id="decWorking" style="display:none; margin-bottom:1rem;">
+      <div class="counter-label">candidates tested</div>
+      <div class="counter" id="counter">0</div>
+      <div class="progress"><div class="progress-bar" id="progBar"></div></div>
+      <div class="phase" id="phase"></div>
+    </div>
+
+    <div class="code-wrap" id="codeWrap" style="display:none;">
+      <div class="label">recovered program</div>
+      <div class="code-window" id="codeWindow"></div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <strong>Decoder spec:</strong> find the factor of N whose bit-length equals P bits. Divide N by it to recover m. Interpret m as UTF-8 → run as JavaScript.
+  </div>
+
+  <footer>PrimeScript &mdash; an esolang where programs are easy to write and hard to interpret</footer>
+
+</div>
+<script>
+let lastN = null, lastP = null, lastBits = 0;
+let decWorker = null;
+let decodeStart = 0;
+const DEMO_BITS = new Set([16, 32]);
+
+function setStatus(id, msg, cls) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'status' + (cls ? ' ' + cls : '');
+}
+
+function hardnessLabel(bits) {
+  if (bits <= 16) return 'instant (proof of concept)';
+  if (bits <= 32) return 'seconds to minutes';
+  if (bits <= 64) return '~years (classical)';
+  if (bits <= 128) return '~millions of years';
+  if (bits <= 256) return '~10¹⁵ years';
+  if (bits <= 512) return '~10³⁰ years';
+  if (bits <= 1024) return '~10⁵⁰ years';
+  return '~10²⁰ core-years (>> age of universe)';
+}
+
+function randomOddBigInt(bits) {
+  const bytes = Math.ceil(bits / 8);
+  const arr = new Uint8Array(bytes);
+  crypto.getRandomValues(arr);
+  arr[0] |= 0x80;
+  let hex = '';
+  for (const b of arr) hex += b.toString(16).padStart(2, '0');
+  return BigInt('0x' + hex) | 1n;
+}
+
+function modPow(base, exp, mod) {
+  let result = 1n; base = base % mod;
+  while (exp > 0n) {
+    if (exp & 1n) result = (result * base) % mod;
+    exp >>= 1n; base = (base * base) % mod;
+  }
+  return result;
+}
+
+function millerRabin(n) {
+  if (n < 2n) return false;
+  for (const s of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n]) {
+    if (n === s) return true;
+    if (n % s === 0n) return false;
+  }
+  let d = n - 1n, r = 0;
+  while (d % 2n === 0n) { d >>= 1n; r++; }
+  for (const a of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n]) {
+    if (a >= n) continue;
+    let x = modPow(a, d, n);
+    if (x === 1n || x === n - 1n) continue;
+    let ok = false;
+    for (let j = 0; j < r-1; j++) { x=(x*x)%n; if(x===n-1n){ok=true;break;} }
+    if (!ok) return false;
+  }
+  return true;
+}
+
+function generatePrime(bits) {
+  while (true) {
+    let p = randomOddBigInt(bits);
+    p |= (1n << BigInt(bits - 1));
+    if (millerRabin(p)) return p;
+  }
+}
+
+function tryDecodeUtf8(n) {
+  let hex = n.toString(16);
+  if (hex.length % 2) hex = '0' + hex;
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.slice(i*2, i*2+2), 16);
+  try { return new TextDecoder('utf-8', {fatal: true}).decode(bytes); }
+  catch(e) { return null; }
+}
+
+function highlight(code) {
+  const kwList = ['const','let','var','function','return','if','else','for','while','of','in','new','this','class','import','export','default','typeof','instanceof','true','false','null','undefined','async','await','try','catch','finally','throw','switch','case','break','continue'];
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  let result = '', i = 0;
+  while (i < code.length) {
+    if (code[i] === '/' && code[i+1] === '/') {
+      let end = code.indexOf('\n', i); if (end === -1) end = code.length;
+      result += `<span class="cm">${esc(code.slice(i, end))}</span>`; i = end; continue;
+    }
+    if (code[i] === '"' || code[i] === "'" || code[i] === '`') {
+      const q = code[i]; let j = i+1;
+      while (j < code.length && code[j] !== q) { if (code[j] === '\\') j++; j++; } j++;
+      result += `<span class="str">${esc(code.slice(i, j))}</span>`; i = j; continue;
+    }
+    if (/[0-9]/.test(code[i]) && (i === 0 || /\W/.test(code[i-1]))) {
+      let j = i; while (j < code.length && /[0-9._xXa-fA-F]/.test(code[j])) j++;
+      result += `<span class="num">${esc(code.slice(i, j))}</span>`; i = j; continue;
+    }
+    if (/[a-zA-Z_$]/.test(code[i])) {
+      let j = i; while (j < code.length && /[a-zA-Z0-9_$]/.test(code[j])) j++;
+      const word = code.slice(i, j);
+      if (kwList.includes(word)) result += `<span class="kw">${esc(word)}</span>`;
+      else if (code[j] === '(') result += `<span class="fn">${esc(word)}</span>`;
+      else result += `<span class="pl">${esc(word)}</span>`;
+      i = j; continue;
+    }
+    if (/[{}()[\];,.]/.test(code[i])) { result += `<span class="pun">${esc(code[i])}</span>`; i++; continue; }
+    result += esc(code[i]); i++;
+  }
+  return result;
+}
+
+function onBitsChange() {
+  const bits = parseInt(document.getElementById('bits').value);
+  if (lastN) {
+    document.getElementById('decBtn').disabled = !DEMO_BITS.has(bits);
+    setStatus('decStatus', DEMO_BITS.has(bits) ? '' : 'decode only available at 16-bit or 32-bit', '');
+  }
+}
+
+function encode() {
+  const src = document.getElementById('src').value;
+  if (!src.trim()) { setStatus('encStatus', 'paste some JavaScript first', 'err'); return; }
+  const bits = parseInt(document.getElementById('bits').value);
+  if (decWorker) { decWorker.terminate(); decWorker = null; }
+  setStatus('encStatus', 'generating prime P…', 'working');
+  document.getElementById('encBtn').disabled = true;
+  document.getElementById('decBtn').disabled = true;
+  document.getElementById('codeWrap').style.display = 'none';
+  document.getElementById('decWorking').style.display = 'none';
+  setStatus('decStatus', '', '');
+
+  setTimeout(() => {
+    const bytes = new TextEncoder().encode(src);
+    let mHex = '';
+    for (const b of bytes) mHex += b.toString(16).padStart(2, '0');
+    const m = BigInt('0x' + mHex);
+    setStatus('encStatus', 'primality testing…', 'working');
+    setTimeout(() => {
+      const P = generatePrime(bits);
+      const N = m * P;
+      lastN = N; lastP = P; lastBits = bits;
+      const nStr = N.toString();
+      const outEl = document.getElementById('output');
+      outEl.textContent = nStr;
+      outEl.classList.add('has-value');
+      document.getElementById('stat-m').textContent = bytes.length + ' bytes';
+      document.getElementById('stat-p').textContent = bits + ' bits';
+      document.getElementById('stat-n').textContent = nStr.length + ' digits';
+      document.getElementById('stat-hard').textContent = hardnessLabel(bits);
+      document.getElementById('copyNBtn').disabled = false;
+      document.getElementById('copyPBtn').disabled = false;
+      document.getElementById('decBtn').disabled = !DEMO_BITS.has(bits);
+      setStatus('decStatus', DEMO_BITS.has(bits) ? '' : 'decode only available at 16-bit or 32-bit', '');
+      setStatus('encStatus', 'encoded', 'done');
+      document.getElementById('encBtn').disabled = false;
+    }, 20);
+  }, 10);
+}
+
+function copyN() {
+  if (!lastN) return;
+  navigator.clipboard.writeText(lastN.toString()).then(() => setStatus('copyStatus', 'N copied', 'done'));
+}
+
+function copyP() {
+  if (!lastP) return;
+  const spec = `P = ${lastP.toString()}\nbits = ${lastBits}`;
+  navigator.clipboard.writeText(spec).then(() => setStatus('copyStatus', 'P copied', 'done'));
+}
+
+function startDecode() {
+  if (!lastN || !DEMO_BITS.has(lastBits)) return;
+  if (decWorker) { decWorker.terminate(); decWorker = null; }
+
+  decodeStart = performance.now();
+  document.getElementById('decBtn').disabled = true;
+  document.getElementById('decWorking').style.display = '';
+  document.getElementById('codeWrap').style.display = 'none';
+  document.getElementById('counter').textContent = '0';
+  document.getElementById('progBar').style.width = '0%';
+  document.getElementById('phase').textContent = 'starting…';
+  setStatus('decStatus', 'factoring…', 'working');
+
+  const NStr = lastN.toString();
+  const targetBits = lastBits;
+
+  const workerSrc = `
+    function modPow(base, exp, mod) {
+      let result = 1n; base = base % mod;
+      while (exp > 0n) {
+        if (exp & 1n) result = (result * base) % mod;
+        exp >>= 1n; base = (base * base) % mod;
+      }
+      return result;
+    }
+    function millerRabin(n) {
+      if (n < 2n) return false;
+      for (const s of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n]) {
+        if (n === s) return true;
+        if (n % s === 0n) return false;
+      }
+      let d = n - 1n, r = 0;
+      while (d % 2n === 0n) { d >>= 1n; r++; }
+      for (const a of [2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n]) {
+        if (a >= n) continue;
+        let x = modPow(a, d, n);
+        if (x === 1n || x === n - 1n) continue;
+        let ok = false;
+        for (let j = 0; j < r-1; j++) { x=(x*x)%n; if(x===n-1n){ok=true;break;} }
+        if (!ok) return false;
+      }
+      return true;
+    }
+    self.onmessage = function(e) {
+      const { NStr, targetBits } = e.data;
+      const N = BigInt(NStr);
+      const pMin = 1n << BigInt(targetBits - 1);
+      const pMax = 1n << BigInt(targetBits);
+      const range = pMax - pMin;
+      let c = (pMin % 2n === 0n) ? pMin + 1n : pMin;
+      let tested = 0;
+      const batchSize = 200000;
+      function step() {
+        for (let i = 0; i < batchSize; i++) {
+          if (c >= pMax) { self.postMessage({ type: 'notfound', tested }); return; }
+          if (N % c === 0n && millerRabin(c)) {
+            self.postMessage({ type: 'found', factor: c.toString(), tested });
+            return;
+          }
+          c += 2n; tested++;
+        }
+        const pct = Number((c - pMin) * 100n / range);
+        self.postMessage({ type: 'progress', tested, pct: Math.min(99, pct), candidate: c.toString() });
+        setTimeout(step, 0);
+      }
+      step();
+    };
+  `;
+
+  const blob = new Blob([workerSrc], { type: 'application/javascript' });
+  decWorker = new Worker(URL.createObjectURL(blob));
+
+  decWorker.onmessage = function(e) {
+    const msg = e.data;
+    if (msg.type === 'progress') {
+      document.getElementById('counter').textContent = msg.tested.toLocaleString();
+      document.getElementById('progBar').style.width = msg.pct + '%';
+      document.getElementById('phase').textContent = 'candidate: ' + msg.candidate;
+    } else if (msg.type === 'found') {
+      document.getElementById('counter').textContent = msg.tested.toLocaleString();
+      document.getElementById('progBar').style.width = '100%';
+      const P = BigInt(msg.factor);
+      const m = lastN / P;
+      const decoded = tryDecodeUtf8(m);
+      const elapsed = ((performance.now() - decodeStart) / 1000).toFixed(2);
+      if (decoded !== null) {
+        showRecovered(decoded, msg.tested, elapsed);
+      } else {
+        setStatus('decStatus', 'factor found but m is not valid UTF-8', 'err');
+        document.getElementById('decBtn').disabled = false;
+      }
+      decWorker.terminate(); decWorker = null;
+    } else if (msg.type === 'notfound') {
+      setStatus('decStatus', 'no ' + targetBits + '-bit prime factor found', 'err');
+      document.getElementById('decBtn').disabled = false;
+      decWorker.terminate(); decWorker = null;
+    }
+  };
+
+  decWorker.postMessage({ NStr, targetBits });
+}
+
+function showRecovered(text, tested, elapsed) {
+  document.getElementById('codeWindow').innerHTML = highlight(text);
+  document.getElementById('codeWrap').style.display = '';
+  document.getElementById('decWorking').style.display = 'none';
+  setStatus('decStatus', 'decoded after ' + tested.toLocaleString() + ' candidates (' + elapsed + 's)', 'done');
+  document.getElementById('decBtn').disabled = false;
+}
+</script>
+</body>
+</html>
