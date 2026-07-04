@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hard — a language that cannot be run</title>
+<style>
+  :root{
+    --bg: #0a0d12;
+    --panel: #12161d;
+    --panel-2: #0e1117;
+    --line: rgba(216,213,204,0.14);
+    --line-strong: rgba(216,213,204,0.28);
+    --text: #d8d5cc;
+    --text-dim: #8a8779;
+    --gold: #c9973f;
+    --gold-dim: #7a6230;
+    --red: #b6503f;
+    --teal: #4f9d8f;
+    --mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+    --serif: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html,body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    margin:0;
+    padding:0;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+  .wrap{
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 24px 120px;
+  }
+  header.hero{
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 36px;
+    margin-bottom: 40px;
+  }
+  .eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+  }
+  h1{
+    font-family: var(--serif);
+    font-weight: 600;
+    font-style: italic;
+    font-size: clamp(42px, 8vw, 76px);
+    line-height: 0.95;
+    margin: 0 0 18px 0;
+    color: #efece3;
+    letter-spacing: -0.01em;
+  }
+  .tagline{
+    font-size: 15px;
+    color: var(--text-dim);
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+  .quartet{
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .quartet span b{ color: var(--text); font-weight: 500; }
+
+  section.card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 28px 28px 30px;
+    margin-bottom: 28px;
+  }
+  section.card h2{
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 6px 0;
+    color: #efece3;
+  }
+  .sub{
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    line-height: 1.55;
+    max-width: 68ch;
+  }
+  label{
+    display:block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  textarea, input[type=text], input[type=number]{
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13.5px;
+    padding: 10px 12px;
+    outline: none;
+  }
+  textarea:focus, input:focus{ border-color: var(--gold-dim); }
+  textarea{ min-height: 64px; resize: vertical; }
+  .row{ display:flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; }
+  .row .field{ flex: 1; min-width: 160px; }
+  .field.small{ max-width: 160px; }
+
+  button{
+    background: transparent;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    padding: 10px 20px;
+    border-radius: 2px;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  button:hover{ background: rgba(201,151,63,0.08); border-color: var(--gold); }
+  button:disabled{ opacity: 0.35; cursor: not-allowed; }
+  button.ghost{ border-color: var(--line-strong); color: var(--text-dim); }
+
+  .log{
+    margin-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+  .byte-divider{
+    display:flex; align-items:center; gap:10px;
+    margin: 18px 0 4px;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .byte-divider::before, .byte-divider::after{
+    content:""; flex:1; height:1px; background: var(--line-strong);
+  }
+  .byte-divider b{ color: var(--gold); font-weight: 500; letter-spacing: 0.06em; }
+  .bitrow{
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+  }
+  .bitrow .head{
+    display:flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .bitrow .head .pos{ color: var(--gold); }
+  .bitrow .meta{ color: var(--text-dim); font-size: 11.5px; line-height: 1.6; }
+  .gauge{
+    height: 6px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0 6px;
+  }
+  .gauge > i{
+    display:block; height:100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  }
+  .status{
+    display:inline-block;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+  .status.ok{ color: var(--teal); border-color: var(--teal); }
+  .status.fail{ color: var(--red); border-color: var(--red); }
+  .status.run{ color: var(--gold); border-color: var(--gold-dim); }
+
+  .output{
+    margin-top: 20px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 14px 16px;
+    font-size: 13px;
+    word-break: break-all;
+    line-height: 1.7;
+    min-height: 24px;
+  }
+  .output.empty::before{ content: "—"; color: var(--text-dim); }
+  .footer-note{
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-top: 36px;
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+  }
+  .footer-note code{ color: var(--gold); }
+  a{ color: var(--gold); }
+  .flex-between{ display:flex; justify-content: space-between; align-items:baseline; }
+  .hint{ font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">esolang reference implementation</div>
+    <h1>Hard</h1>
+    <p class="tagline">
+      A program is a string of bits, each XORed against a specific bit of π —
+      specifically, the source's Nth bit is hidden under the (N!)th bit of π's binary expansion.
+      The interpreter is correct and complete. It will also never finish.
+    </p>
+    <div class="quartet">
+      <span><b>PrimeScript</b> — hard to execute</span>
+      <span><b>Square</b> — hard to execute</span>
+      <span><b>Trapdoor</b> — hard to write</span>
+      <span><b>Hard</b> — hard to write, hard to execute</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Encode</h2>
+    <p class="sub">
+      Enter source (interpreted as tinylisp). Each bit of its UTF‑8 encoding is XORed with the (N!)‑th
+      binary digit of π, computed live below using the Bailey–Borwein–Plouffe digit‑extraction formula —
+      no precomputed π table, no shortcuts. Bit 1 needs π's 1st bit. Bit 20 needs π's
+      2,432,902,008,176,640,000th bit. Watch where it stops being a joke.
+    </p>
+
+    <div class="row">
+      <div class="field">
+        <label>Source (tinylisp)</label>
+        <input type="text" id="srcInput" value="7" maxlength="6">
+        <div class="hint">Keep this short. One character already asks a great deal of π.</div>
+      </div>
+      <div class="field small">
+        <label>Time budget / bit (sec)</label>
+        <input type="number" id="budgetInput" value="3" min="1" max="15" step="1">
+      </div>
+    </div>
+    <button id="runEncode">Run encoder</button>
+    <button class="ghost" id="stopEncode" disabled>Stop</button>
+
+    <div class="log" id="encodeLog"></div>
+
+    <label>Resulting Hard program (bits actually resolved)</label>
+    <div class="output empty" id="encodeOutput"></div>
+  </section>
+
+  <section class="card">
+    <h2>Decode</h2>
+    <p class="sub">
+      Paste a Hard program (a string of 0s and 1s). The decoder XORs each bit against the same
+      astronomically-indexed π bit, regroups into bytes, and — if anything at all comes back —
+      hands it to a small tinylisp evaluator. This is the exact same computation as encoding, run
+      in reverse, which is why "decoding" a Hard program is precisely as hard as writing one.
+    </p>
+    <div class="row">
+      <div class="field">
+        <label>Hard program (bits)</label>
+        <input type="text" id="decInput" value="00110111" maxlength="64">
+      </div>
+      <div class="field small">
+        <label>Time budget / bit (sec)</label>
+        <input type="number" id="budgetInput2" value="3" min="1" max="15" step="1">
+      </div>
+    </div>
+    <button id="runDecode">Run decoder</button>
+    <button class="ghost" id="stopDecode" disabled>Stop</button>
+
+    <div class="log" id="decodeLog"></div>
+
+    <label>Recovered source</label>
+    <div class="output empty" id="decodeOutput"></div>
+    <label>tinylisp evaluation</label>
+    <div class="output empty" id="evalOutput"></div>
+  </section>
+
+  <div class="footer-note">
+    Method: for bit position N (1‑indexed), the target π‑bit index is M = N!. The Mth binary digit
+    of π sits inside hex digit d = ⌊(M−1)/4⌋ at offset (M−1) mod 4, and d is extracted with the BBP
+    digit‑extraction series (four sums of the form Σ 16^(d−k) mod (8k+j) / (8k+j)), evaluated with
+    exact modular exponentiation via <code>BigInt</code>. The sum has d+1 terms. There is no way
+    around computing them — that linear term count, not the size of the numbers involved, is the
+    actual wall. Past roughly bit 12–14 the term count exceeds anything a browser tab will finish
+    in a human lifetime, so beyond the measured range this page extrapolates from the throughput it
+    already achieved rather than pretending to keep counting.
+  </div>
+
+</div>
+
+<script>
+// ---------- exact integer helpers ----------
+function factorial(n){
+  let r = 1n;
+  for (let i = 2n; i <= BigInt(n); i++) r *= i;
+  return r;
+}
+function modpow(base, exp, mod){
+  base %= mod;
+  if (base < 0n) base += mod;
+  let result = 1n;
+  while (exp > 0n){
+    if (exp & 1n) result = (result * base) % mod;
+    exp >>= 1n;
+    base = (base * base) % mod;
+  }
+  return result;
+}
+
+// ---------- BBP hex-digit extraction, chunked & yielding ----------
+// Computes the d-th (0-indexed) hex digit of pi's fractional part.
+// timeBudgetMs bounds wall-clock time; onChunk fires periodically with progress.
+async function hexDigitOfPi(d, timeBudgetMs, onChunk){
+  const js = [1, 4, 5, 6];
+  const sums = {1:0, 4:0, 5:0, 6:0};
+  const totalSteps = d + 1n;
+  const CHUNK = 1500n;
+  const start = performance.now();
+  let k = 0n;
+  while (k <= d){
+    for (const j of js){
+      const ak = 8n*k + BigInt(j);
+      const p = d - k;
+      const t = modpow(16n, p, ak);
+      let v = sums[j] + Number(t) / Number(ak);
+      sums[j] = v - Math.floor(v);
+    }
+    k += 1n;
+    if (k % CHUNK === 0n){
+      const elapsed = performance.now() - start;
+      const cont = onChunk(k, totalSteps, elapsed);
+      if (elapsed > timeBudgetMs || cont === false){
+        return { done:false, stepsDone: k, totalSteps, elapsedMs: elapsed };
+      }
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+  // fast-converging tail (k > d): 16^(d-k) shrinks geometrically, floats are fine
+  for (const j of js){
+    let kk = d + 1n;
+    for (let i = 0; i < 200; i++){
+      const ak = Number(8n*kk + BigInt(j));
+      const term = Math.pow(16, Number(d - kk)) / ak;
+      if (!isFinite(term) || term < 1e-17) break;
+      let v = sums[j] + term;
+      sums[j] = v - Math.floor(v);
+      kk += 1n;
+    }
+  }
+  let x = 4*sums[1] - 2*sums[4] - sums[5] - sums[6];
+  x = x - Math.floor(x);
+  if (x < 0) x += 1;
+  const digit = Math.max(0, Math.min(15, Math.floor(x*16)));
+  return { done:true, digit, stepsDone: totalSteps, totalSteps, elapsedMs: performance.now()-start };
+}
+
+// ---------- bit position N -> pi bit, with skip-and-extrapolate ----------
+let measuredRate = null; // steps per ms, learned from the first bit we actually run
+
+function fmtBig(n){
+  const s = n.toString();
+  if (s.length <= 15) return Number(n).toLocaleString();
+  return s[0] + '.' + s.slice(1,4) + '×10^' + (s.length-1);
+}
+function fmtDuration(ms){
+  if (!isFinite(ms)) return 'incalculably long';
+  const s = ms/1000;
+  const YEAR = 3.15576e7;
+  const UNIVERSE = 13.8e9; // years
+  if (s < 60) return s.toFixed(1) + ' sec';
+  if (s < 3600) return (s/60).toFixed(1) + ' min';
+  if (s < 86400) return (s/3600).toFixed(1) + ' hr';
+  if (s < YEAR) return (s/86400).toFixed(1) + ' days';
+  const years = s / YEAR;
+  if (years < 1000) return years.toFixed(1) + ' years';
+  if (years < UNIVERSE) return years.toExponential(2) + ' years';
+  return years.toExponential(2) + ' years (~' + (years/UNIVERSE).toExponential(2) + '× the age of the universe)';
+}
+
+async function computeBitOfPi(N, timeBudgetMs, ui){
+  const M = factorial(N);
+  const Mminus1 = M - 1n;
+  const d = Mminus1 / 4n;
+  const bitOffset = Number(Mminus1 % 4n);
+  const totalSteps = d + 1n;
+
+  ui.setMeta(M, d, totalSteps);
+
+  // If we already know this will blow the budget, don't burn real time proving it.
+  if (measuredRate){
+    const predictedMs = Number(totalSteps) / measuredRate;
+    if (predictedMs > timeBudgetMs * 1.5){
+      ui.skip(predictedMs);
+      return { resolved:false, predictedMs, M, d, totalSteps };
+    }
+  }
+
+  const t0 = performance.now();
+  const res = await hexDigitOfPi(d, timeBudgetMs, (stepsDone, total, elapsed) => {
+    ui.progress(stepsDone, total, elapsed);
+  });
+  const elapsed = performance.now() - t0;
+
+  if (!res.done){
+    const rate = Number(res.stepsDone) / Math.max(elapsed, 1);
+    measuredRate = measuredRate ? (measuredRate + rate)/2 : rate;
+    const predictedMs = Number(totalSteps) / measuredRate;
+    ui.abort(predictedMs, res.stepsDone, totalSteps);
+    return { resolved:false, predictedMs, M, d, totalSteps };
+  }
+
+  const rate = Number(res.stepsDone) / Math.max(elapsed, 1);
+  measuredRate = measuredRate ? (measuredRate + rate)/2 : rate;
+  const bit = (res.digit >> (3 - bitOffset)) & 1;
+  ui.success(bit, res.digit, elapsed);
+  return { resolved:true, bit, M, d, totalSteps };
+}
+
+// ---------- bits <-> text ----------
+function textToBits(str){
+  const bytes = new TextEncoder().encode(str);
+  let bits = [];
+  for (const b of bytes){
+    for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+  }
+  return bits;
+}
+function bitsToText(bits){
+  let bytes = [];
+  for (let i = 0; i+8 <= bits.length; i += 8){
+    let b = 0;
+    for (let j = 0; j < 8; j++) b = (b << 1) | bits[i+j];
+    bytes.push(b);
+  }
+  try { return new TextDecoder('utf-8', {fatal:false}).decode(new Uint8Array(bytes)); }
+  catch(e){ return bytes.map(b => String.fromCharCode(b)).join(''); }
+}
+
+// ---------- minimal tinylisp ----------
+function tlTokenize(s){ return s.replace(/\(/g,' ( ').replace(/\)/g,' ) ').trim().split(/\s+/).filter(Boolean); }
+function tlParse(tokens){
+  if (tokens.length === 0) throw new Error('unexpected end of input');
+  const tok = tokens.shift();
+  if (tok === '('){
+    const list = [];
+    while (tokens[0] !== ')'){
+      if (tokens.length === 0) throw new Error('missing )');
+      list.push(tlParse(tokens));
+    }
+    tokens.shift();
+    return list;
+  }
+  if (tok === ')') throw new Error('unexpected )');
+  const n = Number(tok);
+  return isNaN(n) ? tok : n;
+}
+function tlEval(x, env){
+  if (typeof x === 'number') return x;
+  if (typeof x === 'string'){
+    let e = env;
+    while (e){ if (Object.prototype.hasOwnProperty.call(e.vars,x)) return e.vars[x]; e = e.parent; }
+    throw new Error('unbound symbol: ' + x);
+  }
+  if (!Array.isArray(x) || x.length === 0) return x;
+  const [op, ...args] = x;
+  switch(op){
+    case 'quote': return args[0];
+    case 'atom': { const v = tlEval(args[0], env); return (!Array.isArray(v) || v.length===0) ? 1 : 0; }
+    case 'eq': { const a=tlEval(args[0],env), b=tlEval(args[1],env); return JSON.stringify(a)===JSON.stringify(b) ? 1 : 0; }
+    case 'car': return tlEval(args[0],env)[0];
+    case 'cdr': return tlEval(args[0],env).slice(1);
+    case 'cons': return [tlEval(args[0],env), ...tlEval(args[1],env)];
+    case 'cond': {
+      for (const pair of args){ if (tlEval(pair[0],env)) return tlEval(pair[1],env); }
+      return [];
+    }
+    case 'lambda': return { params: args[0], body: args[1], closure: env };
+    default: {
+      const fn = tlEval(op, env);
+      const vals = args.map(a => tlEval(a, env));
+      if (fn && typeof fn === 'object' && fn.params){
+        const vars = {};
+        fn.params.forEach((p,i) => vars[p] = vals[i]);
+        return tlEval(fn.body, { vars, parent: fn.closure });
+      }
+      throw new Error('not callable: ' + JSON.stringify(op));
+    }
+  }
+}
+function tlRun(src){
+  const tokens = tlTokenize(src);
+  const ast = tlParse(tokens);
+  return tlEval(ast, { vars:{}, parent:null });
+}
+
+// ---------- UI wiring ----------
+function makeRow(container, N, bitVal){
+  const byteIdx = Math.floor((N-1)/8) + 1;
+  const bitInByte = ((N-1) % 8) + 1;
+  const row = document.createElement('div');
+  row.className = 'bitrow';
+  row.innerHTML = `
+    <div class="head">
+      <span class="pos">bit ${N} — byte ${byteIdx}, bit ${bitInByte}/8${bitVal !== undefined ? ' (source = '+bitVal+')' : ''}</span>
+      <span class="status run" data-role="status">running</span>
+    </div>
+    <div class="meta" data-role="meta"></div>
+    <div class="gauge"><i data-role="bar" style="width:0%"></i></div>
+    <div class="meta" data-role="result"></div>
+  `;
+  container.appendChild(row);
+  const statusEl = row.querySelector('[data-role=status]');
+  const metaEl = row.querySelector('[data-role=meta]');
+  const barEl = row.querySelector('[data-role=bar]');
+  const resultEl = row.querySelector('[data-role=result]');
+  return {
+    setMeta(M, d, totalSteps){
+      metaEl.textContent = `π-bit index N! = ${fmtBig(M)}  ·  BBP hex-digit index d = ${fmtBig(d)}  ·  terms required = ${fmtBig(totalSteps)}`;
+    },
+    progress(stepsDone, total, elapsedMs){
+      const pct = Math.min(100, Number(stepsDone * 100n / (total > 0n ? total : 1n)));
+      barEl.style.width = pct.toFixed(4) + '%';
+      resultEl.textContent = `computing… ${fmtBig(stepsDone)} / ${fmtBig(total)} terms  (${elapsedMs.toFixed(0)} ms elapsed)`;
+    },
+    skip(predictedMs){
+      statusEl.textContent = 'skipped';
+      statusEl.className = 'status fail';
+      barEl.style.width = '0%';
+      resultEl.textContent = `not attempted — extrapolated from measured throughput, this bit alone would take ~${fmtDuration(predictedMs)}.`;
+    },
+    abort(predictedMs, stepsDone, total){
+      statusEl.textContent = 'timed out';
+      statusEl.className = 'status fail';
+      resultEl.textContent = `stopped after real computation of ${fmtBig(stepsDone)} of ${fmtBig(total)} terms — at the measured rate, finishing this single bit would take ~${fmtDuration(predictedMs)}.`;
+    },
+    success(bit, digit, elapsedMs){
+      statusEl.textContent = 'resolved';
+      statusEl.className = 'status ok';
+      barEl.style.width = '100%';
+      resultEl.textContent = `π bit = ${bit}  (hex digit ${digit.toString(16)})  — computed for real in ${elapsedMs.toFixed(0)} ms.`;
+    }
+  };
+}
+
+async function runPipeline(bits, timeBudgetSec, logEl, onBit){
+  logEl.innerHTML = '';
+  const timeBudgetMs = timeBudgetSec * 1000;
+  const resolvedBits = [];
+  let everFailed = false;
+  for (let i = 0; i < bits.length; i++){
+    const N = i + 1;
+    if ((N-1) % 8 === 0){
+      const byteIdx = Math.floor((N-1)/8) + 1;
+      const div = document.createElement('div');
+      div.className = 'byte-divider';
+      div.innerHTML = `<b>byte ${byteIdx}</b>${byteIdx>1 ? ' &mdash; every bit here is at least '+fmtBig(factorial(N)-factorial(N-1))+' π-index positions harder than the last byte ended on' : ''}`;
+      logEl.appendChild(div);
+    }
+    const ui = makeRow(logEl, N, bits[i]);
+    const res = await computeBitOfPi(N, timeBudgetMs, ui);
+    if (!res.resolved){
+      everFailed = true;
+      onBit(null, N, res);
+      continue; // still walk forward — once measuredRate exists, later bits skip instantly via extrapolation
+    }
+    if (!everFailed) resolvedBits.push(res.bit);
+    onBit(everFailed ? null : res.bit, N, res);
+  }
+  return resolvedBits;
+}
+
+// ENCODE
+document.getElementById('runEncode').addEventListener('click', async () => {
+  const btn = document.getElementById('runEncode');
+  const stopBtn = document.getElementById('stopEncode');
+  btn.disabled = true;
+  const src = document.getElementById('srcInput').value;
+  const budget = Number(document.getElementById('budgetInput').value) || 3;
+  const bits = textToBits(src);
+  const outEl = document.getElementById('encodeOutput');
+  outEl.className = 'output';
+  outEl.textContent = '';
+  measuredRate = null;
+  let encoded = [];
+  await runPipeline(bits, budget, document.getElementById('encodeLog'), (piBit, N, res) => {
+    if (piBit === null) return;
+    const sourceBit = bits[N-1];
+    encoded.push(sourceBit ^ piBit);
+    outEl.textContent = encoded.join('');
+  });
+  if (encoded.length === 0){ outEl.className = 'output empty'; }
+  btn.disabled = false;
+});
+
+// DECODE
+document.getElementById('runDecode').addEventListener('click', async () => {
+  const btn = document.getElementById('runDecode');
+  btn.disabled = true;
+  const raw = document.getElementById('decInput').value.trim();
+  const budget = Number(document.getElementById('budgetInput2').value) || 3;
+  const encodedBits = raw.split('').filter(c => c==='0'||c==='1').map(Number);
+  const outEl = document.getElementById('decodeOutput');
+  const evalEl = document.getElementById('evalOutput');
+  outEl.className = 'output'; outEl.textContent = '';
+  evalEl.className = 'output empty'; evalEl.textContent = '';
+  measuredRate = null;
+  let recovered = [];
+  await runPipeline(encodedBits, budget, document.getElementById('decodeLog'), (piBit, N, res) => {
+    if (piBit === null) return;
+    recovered.push(encodedBits[N-1] ^ piBit);
+    outEl.textContent = recovered.map(b=>b).join('') + '  →  "' + bitsToText(recovered) + '"';
+  });
+  if (recovered.length === 0){ outEl.className = 'output empty'; }
+  else {
+    const text = bitsToText(recovered);
+    try {
+      const result = tlRun(text);
+      evalEl.className = 'output';
+      evalEl.textContent = `(tinylisp) ${JSON.stringify(text)} → ${JSON.stringify(result)}`;
+    } catch(e){
+      evalEl.className = 'output';
+      evalEl.textContent = `(tinylisp) ${JSON.stringify(text)} did not evaluate: ${e.message}`;
+    }
+  }
+  btn.disabled = false;
+});
+</script>
+</body>
+</html>
