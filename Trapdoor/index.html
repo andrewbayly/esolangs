@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trapdoor — an esolang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1c2b28;
+    --ink-soft: #2a3d39;
+    --paper: #ece5d3;
+    --paper-dim: #d9cfb3;
+    --paper-line: #c3b795;
+    --brass: #ad8a2e;
+    --brass-bright: #cfa93f;
+    --rust: #a13c2c;
+    --moss: #3c6e55;
+    --shadow: rgba(20, 26, 22, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 1px 1px, var(--paper-line) 1px, transparent 0);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+  }
+
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    color: var(--brass);
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(2rem, 4.4vw, 3.1rem);
+    line-height: 1.08;
+    margin: 0 0 14px;
+    max-width: 16ch;
+  }
+
+  header p.sub {
+    font-size: 1.02rem;
+    line-height: 1.55;
+    max-width: 56ch;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  code, .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---- mode toggle: two wax-stamp style switches ---- */
+  .mode-row {
+    display: flex;
+    gap: 12px;
+    margin: 32px 0 20px;
+  }
+
+  .mode-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  .mode-btn:hover { transform: translateY(-1px); }
+  .mode-btn.active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .mode-btn:focus-visible {
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+
+  /* ---- N display ---- */
+  .n-panel {
+    background: var(--paper-dim);
+    border: 1px solid var(--paper-line);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+  }
+
+  .n-panel .label-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .n-panel .label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .n-panel .bits {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--brass);
+  }
+
+  #n-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    word-break: break-all;
+    color: var(--ink);
+  }
+
+  .new-puzzle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: none;
+    border: none;
+    color: var(--brass);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-top: 10px;
+  }
+
+  /* ---- desk: two panels ---- */
+  .desk {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 760px) {
+    .desk { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: #fbf9f2;
+    border: 1px solid var(--paper-line);
+    border-radius: 10px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .panel .desc {
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+
+  textarea {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    background: var(--ink);
+    color: #d8ead9;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  textarea:focus-visible { outline: 2px solid var(--brass); }
+
+  .panel-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  button.action {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button.action:hover { filter: brightness(1.08); transform: translateY(-1px); }
+  button.action:active { transform: translateY(0); }
+  button.action:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  button.action:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+  .action.run { background: var(--brass-bright); color: var(--ink); }
+  .action.stop { background: var(--rust); color: var(--paper); }
+  .action.submit { background: var(--moss); color: var(--paper); }
+
+  .timer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .output {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--paper-dim);
+    border: 1px solid var(--paper-line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    min-height: 48px;
+    max-height: 220px;
+    overflow-y: auto;
+    color: var(--ink-soft);
+  }
+  .output:empty::before {
+    content: "—";
+    opacity: 0.4;
+  }
+
+  /* ---- the door ---- */
+  .doorframe {
+    position: relative;
+    height: 230px;
+    perspective: 1200px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0f1613;
+    box-shadow: inset 0 0 40px var(--shadow);
+  }
+
+  .pit {
+    position: absolute;
+    inset: 0;
+    padding: 18px 20px;
+    color: #8fd8ae;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: auto;
+  }
+
+  .door {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    background:
+      linear-gradient(135deg, var(--brass-bright), var(--brass) 60%, #8a6c22);
+    transition: transform 0.7s cubic-bezier(.6,-0.1,.3,1.2);
+    transform-style: preserve-3d;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset;
+  }
+  .door::before {
+    content: "";
+    position: absolute;
+    inset: 14px;
+    border: 1px solid rgba(0,0,0,0.2);
+    border-radius: 4px;
+    background-image: radial-gradient(circle, rgba(0,0,0,0.35) 2px, transparent 2.4px);
+    background-size: 28px 28px;
+    background-position: 8px 8px;
+  }
+  .door-left { left: 0; transform-origin: left center; }
+  .door-right { right: 0; transform-origin: right center; }
+
+  .doorframe.open .door-left { transform: rotateY(-112deg); }
+  .doorframe.open .door-right { transform: rotateY(112deg); }
+
+  .doorframe.rejected .door-left,
+  .doorframe.rejected .door-right {
+    animation: rattle 0.35s ease;
+  }
+  @keyframes rattle {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  .stamp {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.4) rotate(-8deg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    font-size: 1.05rem;
+    padding: 8px 18px;
+    border: 3px solid currentColor;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .stamp.show {
+    animation: thud 0.3s ease-out forwards;
+  }
+  .stamp.accept { color: #7fe0a6; }
+  .stamp.reject { color: #e0897f; }
+  @keyframes thud {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(-8deg); }
+    60% { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(-8deg); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-8deg); }
+  }
+
+  .result-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    min-height: 1.4em;
+  }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--paper-line);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 68ch;
+  }
+  footer code { color: var(--brass); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .door, .stamp, .doorframe.rejected .door-left, .doorframe.rejected .door-right {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">An esolang</p>
+    <h1>Only code divisible by p gets through.</h1>
+    <p class="sub">
+      Trapdoor is JavaScript with one extra rule: your program's source,
+      read as one enormous integer, must be a multiple of a secret prime
+      <span class="mono">p</span>. The lock below publishes
+      <span class="mono">N&nbsp;=&nbsp;p&nbsp;×&nbsp;q</span> and nothing else.
+      Everything you need is on this page.
+    </p>
+  </header>
+
+  <div class="mode-row" role="group" aria-label="Choose a lock">
+    <button class="mode-btn active" id="mode-easy" aria-pressed="true">Practice lock</button>
+    <button class="mode-btn" id="mode-hard" aria-pressed="false">Production lock</button>
+  </div>
+
+  <section class="n-panel">
+    <div class="label-row">
+      <span class="label" id="n-caption">N — practice lock (small, factor it yourself)</span>
+      <span class="bits" id="n-bits"></span>
+    </div>
+    <div id="n-value" class="mono"></div>
+    <button class="new-puzzle" id="new-puzzle">↻ new practice lock</button>
+  </section>
+
+  <div class="desk">
+    <section class="panel">
+      <h2>The workbench</h2>
+      <p class="desc">
+        Runs in a sandboxed worker, not the main page — a runaway loop here
+        won't freeze the tab. <code>N</code> (a BigInt) is in scope. Use
+        <code>log(...)</code> to print. Whatever you figure out here, you
+        still have to type into the slot yourself.
+      </p>
+      <textarea id="workbench-code" spellcheck="false" aria-label="Workbench JavaScript">// N is already a BigInt in scope.
+// try something like trial division:
+
+for (let d = 2n; d * d <= N; d++) {
+  if (N % d === 0n) {
+    log("p =", d.toString());
+    log("q =", (N / d).toString());
+    break;
+  }
+}
+</textarea>
+      <div class="panel-controls">
+        <button class="action run" id="run-btn">▶ Run</button>
+        <button class="action stop" id="stop-btn" disabled>■ Stop</button>
+        <span class="timer" id="timer">idle</span>
+      </div>
+      <div class="output" id="workbench-output" aria-live="polite"></div>
+    </section>
+
+    <section class="panel">
+      <h2>The slot</h2>
+      <p class="desc">
+        Whatever you paste here is what gets checked against <code>p</code> —
+        byte for byte. If it's a multiple, the doors open and it runs, exactly
+        as typed.
+      </p>
+      <textarea id="submission-code" spellcheck="false" aria-label="Program to submit">console.log("hello from inside the trapdoor");</textarea>
+      <div class="panel-controls">
+        <button class="action submit" id="submit-btn">⏎ Submit</button>
+      </div>
+      <p class="result-line" id="result-line"></p>
+    </section>
+  </div>
+
+  <div class="doorframe" id="doorframe">
+    <div class="pit" id="pit"></div>
+    <div class="door door-left"></div>
+    <div class="door door-right"></div>
+    <div class="stamp accept" id="stamp-accept">ACCEPTED</div>
+    <div class="stamp reject" id="stamp-reject">REJECTED</div>
+  </div>
+
+  <footer>
+    View source if you want to see how the lock is built — that's the point.
+    One honest caveat: this page keeps <code>p</code> in ordinary browser
+    memory, for illustration only. A real deployment would never ship
+    <code>p</code> to a client at all; it would run the divisibility check
+    behind a server that only ever answers yes or no. That version is
+    written up separately if you want to see the difference between a demo
+    and a design.
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // -------------------------------------------------------------
+  // DEMO ONLY. In a real Trapdoor deployment, p would live only on
+  // a server the player never touches — see the accompanying spec,
+  // section on why a shippable validator can't keep a secret. Here,
+  // for the sake of showing the player experience without standing
+  // up a server, p is just a variable in this script. View source
+  // shows it in plaintext. That's the honest tradeoff of a demo.
+  // -------------------------------------------------------------
+
+  const SMALL_PRIMES = [101, 103, 107, 109, 113, 127, 131, 137, 139, 149,
+    151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227,
+    229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293];
+
+  function pickEasyPrimes() {
+    const a = SMALL_PRIMES[Math.floor(Math.random() * SMALL_PRIMES.length)];
+    let b = SMALL_PRIMES[Math.floor(Math.random() * SMALL_PRIMES.length)];
+    while (b === a) b = SMALL_PRIMES[Math.floor(Math.random() * SMALL_PRIMES.length)];
+    return [BigInt(a), BigInt(b)];
+  }
+
+  const HARD_P = 158939078799470812284557106373369798610665817759255662289059541457234934388240587069431717729550970669568559234877005534557438224909577819285826534798926855820232033455324056931482221060754992631286290555404176344702650783114197774935171342302738806878177260547001604076392673644638371599541447111498617529209n;
+  const HARD_Q = 98578371039590977236255459303424953941631847018468379521650354352075731651512096549661936462054416928403942710352847033972610209760373240839716033107015860206398540270681091165557702697404825610883163963917326212985813903283422373940133897715939701004220341131445825864695989751660319336484451556682418539781n;
+
+  // ---- the "server": only exposes validate() and the current N ----
+  function makeServer(p, q) {
+    let currentP = p; // captured, not attached as a property
+    return {
+      N: p * q,
+      validate(source) {
+        const bytes = new TextEncoder().encode(source);
+        let n = 0n;
+        for (const b of bytes) n = (n << 8n) | BigInt(b);
+        return n % currentP === 0n;
+      }
+    };
+  }
+
+  let mode = 'easy';
+  let server = makeServer(...pickEasyPrimes());
+
+  const els = {
+    modeEasy: document.getElementById('mode-easy'),
+    modeHard: document.getElementById('mode-hard'),
+    nCaption: document.getElementById('n-caption'),
+    nBits: document.getElementById('n-bits'),
+    nValue: document.getElementById('n-value'),
+    newPuzzle: document.getElementById('new-puzzle'),
+    workbenchCode: document.getElementById('workbench-code'),
+    runBtn: document.getElementById('run-btn'),
+    stopBtn: document.getElementById('stop-btn'),
+    timer: document.getElementById('timer'),
+    workbenchOutput: document.getElementById('workbench-output'),
+    submissionCode: document.getElementById('submission-code'),
+    submitBtn: document.getElementById('submit-btn'),
+    resultLine: document.getElementById('result-line'),
+    doorframe: document.getElementById('doorframe'),
+    pit: document.getElementById('pit'),
+    stampAccept: document.getElementById('stamp-accept'),
+    stampReject: document.getElementById('stamp-reject'),
+  };
+
+  function renderN() {
+    const nStr = server.N.toString();
+    els.nValue.textContent = nStr;
+    els.nBits.textContent = nStr.length + ' digits / ' + server.N.toString(2).length + ' bits';
+    if (mode === 'easy') {
+      els.nCaption.textContent = 'N — practice lock (small, factor it yourself)';
+      els.newPuzzle.style.display = 'inline-block';
+    } else {
+      els.nCaption.textContent = 'N — production lock (real RSA-strength semiprime)';
+      els.newPuzzle.style.display = 'none';
+    }
+  }
+
+  function setMode(next) {
+    mode = next;
+    els.modeEasy.classList.toggle('active', mode === 'easy');
+    els.modeHard.classList.toggle('active', mode === 'hard');
+    els.modeEasy.setAttribute('aria-pressed', String(mode === 'easy'));
+    els.modeHard.setAttribute('aria-pressed', String(mode === 'hard'));
+    server = mode === 'easy' ? makeServer(...pickEasyPrimes()) : makeServer(HARD_P, HARD_Q);
+    renderN();
+    resetResult();
+  }
+
+  els.modeEasy.addEventListener('click', () => setMode('easy'));
+  els.modeHard.addEventListener('click', () => setMode('hard'));
+  els.newPuzzle.addEventListener('click', () => {
+    if (mode !== 'easy') return;
+    server = makeServer(...pickEasyPrimes());
+    renderN();
+  });
+
+  // ---- workbench: runs in a Worker so it can't freeze the tab ----
+  const WORKER_SRC = `
+    self.onmessage = function (e) {
+      const N = e.data.N;
+      const code = e.data.code;
+      const log = (...args) => self.postMessage({ type: 'log', text: args.map(String).join(' ') });
+      try {
+        const fn = new Function('N', 'log', code);
+        fn(N, log);
+        self.postMessage({ type: 'done' });
+      } catch (err) {
+        self.postMessage({ type: 'error', message: err.message });
+      }
+    };
+  `;
+
+  let worker = null;
+  let timerHandle = null;
+  let startTime = 0;
+
+  function appendOutput(line) {
+    els.workbenchOutput.textContent += (els.workbenchOutput.textContent ? '\n' : '') + line;
+    els.workbenchOutput.scrollTop = els.workbenchOutput.scrollHeight;
+  }
+
+  function stopTimer(finalLabel) {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+    if (finalLabel) els.timer.textContent = finalLabel;
+  }
+
+  function endRun(label) {
+    if (worker) { worker.terminate(); worker = null; }
+    stopTimer(label);
+    els.runBtn.disabled = false;
+    els.stopBtn.disabled = true;
+  }
+
+  els.runBtn.addEventListener('click', () => {
+    els.workbenchOutput.textContent = '';
+    const blob = new Blob([WORKER_SRC], { type: 'application/javascript' });
+    worker = new Worker(URL.createObjectURL(blob));
+    els.runBtn.disabled = true;
+    els.stopBtn.disabled = false;
+    startTime = performance.now();
+    timerHandle = setInterval(() => {
+      els.timer.textContent = ((performance.now() - startTime) / 1000).toFixed(1) + 's running…';
+    }, 100);
+
+    worker.onmessage = (e) => {
+      const msg = e.data;
+      if (msg.type === 'log') appendOutput(msg.text);
+      else if (msg.type === 'done') endRun(((performance.now() - startTime) / 1000).toFixed(1) + 's — finished');
+      else if (msg.type === 'error') { appendOutput('Error: ' + msg.message); endRun('stopped (error)'); }
+    };
+    worker.onerror = (e) => { appendOutput('Error: ' + e.message); endRun('stopped (error)'); };
+    worker.postMessage({ N: server.N, code: els.workbenchCode.value });
+  });
+
+  els.stopBtn.addEventListener('click', () => {
+    appendOutput('— stopped by you —');
+    endRun('stopped');
+  });
+
+  // ---- submission: validate, then run on acceptance ----
+  function resetResult() {
+    els.resultLine.textContent = '';
+    els.pit.textContent = '';
+    els.doorframe.classList.remove('open', 'rejected');
+    els.stampAccept.classList.remove('show');
+    els.stampReject.classList.remove('show');
+  }
+
+  els.submitBtn.addEventListener('click', () => {
+    const source = els.submissionCode.value;
+    
+    console.log(source)
+    
+    els.stampAccept.classList.remove('show');
+    els.stampReject.classList.remove('show');
+    els.pit.textContent = '';
+
+    const valid = server.validate(source);
+
+    if (valid) {
+      els.doorframe.classList.remove('rejected');
+      els.doorframe.classList.add('open');
+      els.resultLine.textContent = 'Accepted — divisible by p. Running it now.';
+      requestAnimationFrame(() => els.stampAccept.classList.add('show'));
+
+      const lines = [];
+      const fakeConsole = { log: (...a) => lines.push(a.map(String).join(' ')) };
+      try {
+        new Function('console', source)(fakeConsole);
+        els.pit.textContent = lines.join('\n') || '(ran with no output)';
+      } catch (err) {
+        els.pit.textContent = (lines.length ? lines.join('\n') + '\n' : '') + 'Runtime error: ' + err.message;
+      }
+    } else {
+      els.doorframe.classList.remove('open');
+      els.doorframe.classList.add('rejected');
+      els.resultLine.textContent = 'Rejected — not divisible by p.';
+      requestAnimationFrame(() => els.stampReject.classList.add('show'));
+    }
+  });
+
+  renderN();
+})();
+</script>
+</body>
+</html>
