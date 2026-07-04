@@ -75,5 +75,4 @@ you can read `p` out of. That's discussed in detail, not glossed over.
 
 ## License
 
-*(pick one — MIT is a reasonable default for an esolang toolchain if you
-don't already have a preference)*
+* MIT
