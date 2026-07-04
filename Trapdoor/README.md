@@ -20,7 +20,7 @@ start.
 
 ## Try it without installing anything
 
-Open [`demo.html`](demo.html) in a browser. No build step, no server —
+Open [`index.html`](index.html) in a browser. No build step, no server —
 it's one static file. It has two modes:
 
 - **Practice lock** — a tiny `N` you can factor yourself in the built-in
@@ -53,7 +53,7 @@ for guidance on sizing `N` for an actual puzzle versus a real deployment.
 | File | Purpose |
 |---|---|
 | `SPEC.md` | Full language spec, encoding, and design-tension discussion |
-| `demo.html` | Standalone, client-side, illustration of the player experience |
+| `index.html` | Standalone, client-side, illustration of the player experience |
 | `bigmath.js` | BigInt helpers: modpow, Miller–Rabin, random prime generation |
 | `keygen.js` | Designer tool: generate `p`, `q`, `N` |
 | `obfuscate.js` | Designer tool: build a publishable `validator.js` from `p` |
