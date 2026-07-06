@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fun3 — SKI Combinator Esolang</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #12181f;
+    --border: #263241;
+    --text: #d6e2ea;
+    --dim: #7086a0;
+    --accent: #5fd9c4;
+    --accent-dim: #2f6a5f;
+    --error: #ff6b6b;
+    --mono: "IBM Plex Mono", "SF Mono", "Fira Code", Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    margin: 0;
+    padding: 40px 24px 80px;
+    display: flex;
+    justify-content: center;
+    line-height: 1.5;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  header {
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 20px;
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+    font-weight: 600;
+  }
+
+  h1 span.tag {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    color: var(--dim);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .subtitle code {
+    color: var(--text);
+    background: var(--panel);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  label.field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dim);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  select, textarea, button {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+  }
+
+  select {
+    flex: 1;
+    min-width: 220px;
+    cursor: pointer;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    tab-size: 2;
+  }
+
+  textarea:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  button {
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  button:hover {
+    border-color: var(--accent-dim);
+  }
+
+  button.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #eafff9;
+    font-weight: 600;
+  }
+
+  button.primary:hover {
+    background: #3a8577;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  section {
+    margin-bottom: 26px;
+  }
+
+  #console {
+    background: #080c10;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px;
+    min-height: 160px;
+    max-height: 420px;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+
+  #console:empty::before {
+    content: "// output will appear here";
+    color: var(--dim);
+  }
+
+  .run-block {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--border);
+  }
+
+  .run-block:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .run-header {
+    color: var(--dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .run-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 2px 0;
+  }
+
+  .run-line.out::before {
+    content: "> ";
+    color: var(--accent);
+  }
+
+  .run-line.err {
+    color: var(--error);
+  }
+
+  .run-line.err::before {
+    content: "! ";
+  }
+
+  footer {
+    margin-top: 30px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Fun3 <span class="tag">/&nbsp;SKI</span></h1>
+    <p class="subtitle">A program is one call: <code>CALL(...)</code>. Trees are built from <code>S()</code>, <code>K()</code>, <code>I()</code>, <code>APP()</code> and <code>PRINT()</code>.</p>
+  </header>
+
+  <section>
+    <label class="field-label" for="examples">Load example</label>
+    <div class="row">
+      <select id="examples">
+        <option value="">— choose an example —</option>
+        <option value="skk">S K K = I (structural check)</option>
+        <option value="church3">Church numeral 3, printed</option>
+        <option value="ycombinator">Y-combinator, unbounded recursion</option>
+      </select>
+    </div>
+
+    <label class="field-label" for="program">Program</label>
+    <textarea id="program" spellcheck="false" placeholder="CALL(PRINT(APP(APP(APP(S(), K()), K()), I())))"></textarea>
+
+    <div class="btn-row">
+      <button class="primary" id="runBtn">Run</button>
+      <button id="clearBtn">Clear console</button>
+    </div>
+  </section>
+
+  <section>
+    <label class="field-label">Console</label>
+    <div id="console"></div>
+  </section>
+
+  <footer>step limit: 10,000 reductions per run &middot; PRINT probes for Church numerals and passes its argument through unchanged</footer>
+
+</div>
+
+<script>
+  // ---------- Fun3 library ----------
+
+  // A note on Turing completeness: SKI combinator calculus itself is
+  // Turing complete (S and K alone suffice; I is derivable). This
+  // implementation is Turing complete only in the same "modulo resources"
+  // sense every real interpreter is -- two independent limits sit between
+  // this code and the idealized calculus:
+  //   1. STEP_LIMIT below -- a practical, freely adjustable safety valve.
+  //      It only bounds divergence that manifests as flat, repeated
+  //      trampoline iterations.
+  //   2. The host JS engine's own call stack -- a separate, architectural
+  //      ceiling. Genuine SKI divergence (e.g. omega applied to itself, or
+  //      Y-driven recursion -- see the "Y-combinator" example) reduces via
+  //      *nested* calls into force()/ap(), not flat iteration, so it hits
+  //      this ceiling directly and is NOT controlled by STEP_LIMIT at all.
+  //      Removing STEP_LIMIT entirely does not let these terms run longer;
+  //      verified directly -- they still crash immediately via
+  //      "Maximum call stack size exceeded".
+  // Closing gap #2 would require rewriting force()/ap() as an explicit,
+  // heap-allocated trampoline instead of relying on JS's native call
+  // stack for recursion depth -- a real rewrite, not a constant to delete.
+  // Left as-is here given the added complexity; the tradeoff is the same
+  // one every practical language implementation makes, just stated
+  // explicitly instead of left implicit.
+
+  const STEP_LIMIT = 10000;
+
+  function force(v) {
+    let steps = 0;
+    while (typeof v === 'function' && v.length === 0) {
+      if (++steps > STEP_LIMIT) {
+        throw new Error('Reduction did not terminate within ' + STEP_LIMIT + ' steps (likely divergent term).');
+      }
+      v = v();
+    }
+    return v;
+  }
+
+  // Every application in the system routes through here, not just the
+  // outer APP/CALL boundary. This matters: S's reduction rule applies one
+  // sub-result to another (not just raw x/y to z), and that intermediate
+  // result can itself be an unforced APP thunk. Calling it directly with
+  // JS's own function-call syntax would silently drop the argument instead
+  // of erroring, since an unforced thunk is a zero-arg function. Routing
+  // through force() here closes that gap.
+  function ap(f, arg) {
+    return force(f)(arg);
+  }
+
+  // The second sub-application inside S's rule is deferred as a thunk
+  // rather than computed immediately. Without this, S would eagerly
+  // evaluate both halves of "x z (y z)" before combining them, which
+  // defeats K's ability to discard a divergent argument without ever
+  // running it (verified: this was the difference between a self-
+  // application term looping forever vs. resolving correctly).
+  function S() { return x => y => z => ap(ap(x, z), () => ap(y, z)); }
+  function K() { return x => y => x; }
+  function I() { return x => x; }
+
+  function APP(a, b) {
+    return () => ap(a, b);
+  }
+
+  function CALL(a) {
+    return force(a);
+  }
+
+  function PRINT(xThunk) {
+    const x = force(xThunk);
+    let label;
+    try {
+      const result = force(x(n => force(n) + 1)(0));
+      label = (typeof result === 'number') ? String(result) : '<not a Church numeral>';
+    } catch (e) {
+      label = '<not a Church numeral>';
+    }
+    logLine(label, false);
+    return x;
+  }
+
+  // ---------- Example programs (as source text, for the dropdown + eval) ----------
+
+  const EXAMPLES = {
+    // A Fun3 program is one call: no names, no declarations, just nested
+    // S()/K()/I()/APP() calls wrapped in CALL(PRINT(...)). These examples
+    // are written that way — verbose, since combinator calculus has no
+    // sharing without extra machinery, but that repetition is faithful to
+    // what a real Fun3 program looks like.
+
+    skk:
+`// S K K applied to the Church numeral 2 (built purely from S/K/I).
+// SKK reduces to I, so this should print 2.
+CALL(PRINT(APP(APP(APP(S(), K()), K()), APP(APP(S(), APP(APP(S(), APP(K(), S())), K())), APP(APP(S(), APP(APP(S(), APP(K(), S())), K())), APP(K(), I()))))))`,
+
+    church3:
+`// Church numeral 3, built entirely from S, K, I.
+// SUCC = S (S (K S) K), ZERO = K I, applied three times.
+CALL(PRINT(APP(APP(S(), APP(APP(S(), APP(K(), S())), K())), APP(APP(S(), APP(APP(S(), APP(K(), S())), K())), APP(APP(S(), APP(APP(S(), APP(K(), S())), K())), APP(K(), I()))))))`,
+
+    ycombinator:
+`// The Y-combinator applied to "self n = self (SUCC n)", then applied to
+// the numeral 0. There's no base case, so this recurses without end --
+// a genuine demonstration of Turing-completeness modulo the step limit
+// (the same property that makes real interpreters need a resource cap).
+// Expect: "Program did not terminate" in the console, not a result.
+CALL(APP(APP(APP(APP(S(), APP(APP(S(), APP(APP(S(), APP(K(), S())), APP(APP(S(), APP(K(), K())), I()))), APP(K(), APP(APP(S(), I()), I())))), APP(APP(S(), APP(APP(S(), APP(K(), S())), APP(APP(S(), APP(K(), K())), I()))), APP(K(), APP(APP(S(), I()), I())))), APP(APP(S(), APP(APP(S(), APP(K(), S())), APP(APP(S(), APP(K(), K())), I()))), APP(K(), APP(APP(S(), APP(K(), APP(S(), APP(APP(S(), APP(K(), S())), K())))), I())))), APP(K(), I())))`
+  };
+
+  // ---------- UI wiring ----------
+
+  const programEl = document.getElementById('program');
+  const consoleEl = document.getElementById('console');
+  const examplesEl = document.getElementById('examples');
+
+  let currentRunBlock = null;
+
+  function logLine(text, isError) {
+    if (!currentRunBlock) return;
+    const line = document.createElement('div');
+    line.className = 'run-line ' + (isError ? 'err' : 'out');
+    line.textContent = text;
+    currentRunBlock.appendChild(line);
+  }
+
+  function runProgram(source) {
+    currentRunBlock = document.createElement('div');
+    currentRunBlock.className = 'run-block';
+
+    const header = document.createElement('div');
+    header.className = 'run-header';
+    header.textContent = 'run @ ' + new Date().toLocaleTimeString();
+    currentRunBlock.appendChild(header);
+
+    consoleEl.appendChild(currentRunBlock);
+
+    try {
+      // S, K, I, APP, CALL, PRINT are in scope via closure (Function constructor
+      // below captures them as free variables through direct eval semantics).
+      const runner = new Function(
+        'S', 'K', 'I', 'APP', 'CALL', 'PRINT',
+        source
+      );
+      runner(S, K, I, APP, CALL, PRINT);
+    } catch (e) {
+      // Some divergent terms (notably self-application, e.g. an omega
+      // combinator applied to itself) overflow the JS call stack rather
+      // than tripping the STEP_LIMIT counter, since the recursion happens
+      // through nested calls rather than the trampoline's own loop. Both
+      // cases are reported the same way, since from the program author's
+      // side they mean the same thing: this term does not reduce to a value.
+      if (e instanceof RangeError) {
+        logLine('Program did not terminate (divergent term).', true);
+      } else {
+        logLine(e.message || String(e), true);
+      }
+    }
+
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+    currentRunBlock = null;
+  }
+
+  document.getElementById('runBtn').addEventListener('click', () => {
+    const src = programEl.value.trim();
+    if (!src) return;
+    runProgram(src);
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    consoleEl.innerHTML = '';
+  });
+
+  examplesEl.addEventListener('change', () => {
+    const key = examplesEl.value;
+    if (key && EXAMPLES[key]) {
+      programEl.value = EXAMPLES[key];
+    }
+  });
+</script>
+</body>
+</html>
