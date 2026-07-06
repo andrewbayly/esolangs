@@ -699,7 +699,7 @@
     try {
       const runner = new Function('runTinylisp', 'runFromChainLength', fullSource);
       runner(runTinylisp, runFromChainLength);
-      log('muted', '(chain dispatched — asynchronous work, if any, will log above as it completes)');
+      log('muted', '(chain complete)');
     } catch(e){
       log('error', 'Error while running your f: ' + e.message);
     }
