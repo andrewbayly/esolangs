@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puzzle — an esolang made of backticks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0d12;
+    --bg-2: #0e1119;
+    --panel: #12151d;
+    --panel-alt: #171b26;
+    --line: #262b3a;
+    --text: #e9e7df;
+    --text-dim: #9aa0b4;
+    --text-faint: #5b6178;
+    --accent: #f2b544;
+    --accent-soft: #f2b54422;
+    --accent-2: #6f9bff;
+    --danger: #ff6b6b;
+    --success: #7ee0b0;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, #161c2c 0%, transparent 45%),
+      radial-gradient(circle at 100% 20%, #1a1420 0%, transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  ::selection{ background:var(--accent-soft); color:var(--accent); }
+  a{ color:var(--accent-2); }
+  code, .mono{ font-family:'JetBrains Mono', ui-monospace, monospace; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 28px 90px; }
+
+  /* ---------- hero ---------- */
+  header.hero{
+    padding:72px 0 40px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .tick-rain{
+    position:absolute; inset:0; pointer-events:none;
+    font-family:'JetBrains Mono', monospace;
+    color:var(--text-faint);
+    opacity:.35;
+    font-size:22px;
+    letter-spacing:10px;
+    white-space:nowrap;
+    line-height:2.4;
+    mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+  }
+  .hero-inner{ position:relative; z-index:1; }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--accent);
+    font-size:13px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    margin:0 0 18px;
+  }
+  h1.title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:clamp(42px, 7vw, 76px);
+    margin:0 0 6px;
+    letter-spacing:-.02em;
+    color:var(--text);
+  }
+  h1.title .tick{ color:var(--accent); }
+  .subtitle{
+    font-size:19px;
+    color:var(--text-dim);
+    max-width:640px;
+    margin:14px 0 32px;
+  }
+  .chain-demo{
+    font-family:'JetBrains Mono', monospace;
+    font-size:15px;
+    color:var(--text-dim);
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 20px;
+    display:inline-block;
+    max-width:100%;
+    overflow-x:auto;
+  }
+  .chain-demo .f{ color:var(--accent-2); font-weight:600; }
+  .chain-demo .tk{ color:var(--accent); }
+  .chain-demo .call{ color:var(--text-faint); }
+
+  /* ---------- sections ---------- */
+  section{ padding:56px 0; border-bottom:1px solid var(--line); }
+  section:last-of-type{ border-bottom:none; }
+  h2.section-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 22px;
+    display:flex; align-items:center; gap:10px;
+  }
+  h2.section-title::before{
+    content:''; width:18px; height:1px; background:var(--accent); display:inline-block;
+  }
+  .lede{ color:var(--text-dim); max-width:760px; }
+
+  .spec-grid{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:28px;
+  }
+  .spec-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .spec-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    margin:0 0 10px;
+    font-size:17px;
+  }
+  .spec-card p{ margin:0; color:var(--text-dim); font-size:14.5px; }
+  .spec-card ol, .spec-card ul{ margin:8px 0 0; padding-left:20px; color:var(--text-dim); font-size:14.5px; }
+  .spec-card li{ margin:4px 0; }
+  .spec-card .mono-line{
+    margin-top:12px; font-size:13px; color:var(--accent); background:#00000040;
+    border:1px solid var(--line); border-radius:6px; padding:8px 10px; word-break:break-all;
+  }
+
+  .warn-note{
+    margin-top:24px; font-size:13.5px; color:var(--text-faint);
+    border-left:2px solid var(--accent); padding-left:14px;
+  }
+
+  /* ---------- workshop panels ---------- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 24px 24px;
+    margin-bottom:24px;
+  }
+  .panel h3{
+    font-family:'Space Grotesk', sans-serif;
+    margin:0 0 6px;
+    font-size:19px;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  }
+  .panel .desc{ color:var(--text-dim); font-size:14px; margin:0 0 16px; }
+  .panel .desc code{ color:var(--accent); }
+
+  textarea, .tape{
+    width:100%;
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--text);
+    font-family:'JetBrains Mono', monospace;
+    font-size:13.5px;
+    padding:14px 16px;
+    resize:vertical;
+    tab-size:2;
+  }
+  textarea:focus, .tape:focus{ outline:2px solid var(--accent-soft); border-color:var(--accent); }
+  textarea#tinylispSrc{ height:110px; }
+  textarea#fCode{ height:220px; }
+
+  .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-top:14px; }
+
+  button{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:.01em;
+    color:#0b0d12;
+    background:var(--accent);
+    border:none;
+    border-radius:7px;
+    padding:11px 20px;
+    cursor:pointer;
+    transition:transform .08s ease, filter .15s ease;
+  }
+  button:hover{ filter:brightness(1.08); }
+  button:active{ transform:translateY(1px); }
+  button.secondary{
+    background:transparent;
+    color:var(--text-dim);
+    border:1px solid var(--line);
+  }
+  button.secondary:hover{ color:var(--text); border-color:var(--accent-2); }
+  button:focus-visible{ outline:2px solid var(--accent-2); outline-offset:2px; }
+
+  .stat-row{
+    display:flex; gap:22px; flex-wrap:wrap; margin-top:16px;
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+  }
+  .stat{ color:var(--text-dim); }
+  .stat b{ color:var(--text); display:block; font-size:15px; margin-top:2px; word-break:break-all; }
+
+  .tape{
+    margin-top:14px;
+    max-height:120px;
+    overflow:auto;
+    white-space:pre-wrap;
+    word-break:break-all;
+    color:var(--accent);
+    letter-spacing:1px;
+    background:
+      repeating-linear-gradient(90deg, #00000030 0 2px, transparent 2px 14px),
+      var(--panel-alt);
+    position:relative;
+  }
+  .tape::before{
+    content:'ENCODED PROGRAM';
+    position:absolute; top:-9px; left:12px;
+    background:var(--panel);
+    padding:0 6px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:.12em;
+    color:var(--text-faint);
+  }
+
+  .console{
+    margin-top:14px;
+    background:#070810;
+    border:1px solid var(--line);
+    border-radius:8px;
+    height:220px;
+    overflow-y:auto;
+    padding:14px 16px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px;
+  }
+  .console .line{ margin:0 0 6px; white-space:pre-wrap; word-break:break-word; }
+  .console .info{ color:var(--text-dim); }
+  .console .success{ color:var(--success); }
+  .console .error{ color:var(--danger); }
+  .console .muted{ color:var(--text-faint); font-style:italic; }
+  .console .lisp{ color:var(--accent-2); }
+  .console .empty{ color:var(--text-faint); font-style:italic; }
+
+  footer{ padding:40px 0 0; color:var(--text-faint); font-size:13px; }
+  footer .mono{ color:var(--text-faint); }
+
+  @media (max-width:820px){
+    .spec-grid{ grid-template-columns:1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="tick-rain" aria-hidden="true" id="tickRain"></div>
+  <div class="wrap hero-inner">
+    <p class="eyebrow">an esoteric programming language</p>
+    <h1 class="title">Puzzle<span class="tick">.</span></h1>
+    <p class="subtitle">
+      Every Puzzle program is the same two characters, repeated: <span class="mono">f</span> and a run of backticks.
+      What the program does depends entirely on how many backticks there are — and on whether you can write
+      a function that figures that out.
+    </p>
+    <div class="chain-demo mono">
+      <span class="call">source&nbsp;→</span> <span class="f">f</span><span class="tk">``````&hellip;``</span> <span class="call">← 2N backticks</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section id="spec">
+    <h2 class="section-title">How Puzzle works</h2>
+    <p class="lede">
+      The whole language is a trick of JavaScript grammar. A tagged template like <code class="mono">f`hi`</code> is just
+      <code class="mono">f</code> called with a strings array. Chain more backticks on and each result gets called again as the
+      next tag — <code class="mono">f``````</code> calls <code class="mono">f</code>, then calls whatever it returned, then
+      calls whatever <em>that</em> returned. A Puzzle program is nothing but that chain, stretched out to a specific length.
+    </p>
+    <div class="spec-grid">
+      <div class="spec-card">
+        <h3>1 — Read the length</h3>
+        <p>Count every backtick in the program and divide by two. That gives a single non‑negative integer, <b>N</b> — the
+          number of tag calls in the chain, including the very first call to <code class="mono">f</code> itself.</p>
+        <div class="mono-line">backticks ÷ 2 = N</div>
+      </div>
+      <div class="spec-card">
+        <h3>2 — Decode the bytes</h3>
+        <p>N is not just a length. Treat N itself as a base‑256 number and expand it back into its bytes, most significant
+          byte first. Those bytes, read as UTF‑8, are the source code of a tinylisp program.</p>
+        <div class="mono-line">bytes(N) → UTF‑8 → tinylisp source</div>
+      </div>
+      <div class="spec-card">
+        <h3>3 — Run it</h3>
+        <p>Execute the decoded text as tinylisp. tinylisp is the host language for Puzzle — the same interpreter backs
+          this page's <code class="mono">runTinylisp</code> and <code class="mono">runFromChainLength</code> helpers below,
+          so you don't need to write a Lisp from scratch to solve this.</p>
+        <p style="margin-top:8px;">What you do need to write is <code class="mono">f</code>.</p>
+      </div>
+    </div>
+    <p class="warn-note">
+      Nothing above is hidden — this is the entire specification. The difficulty is not in the rules, it's in
+      implementing <code class="mono">f</code> so that the chain behaves correctly. In particular: a tag function
+      is called synchronously, with no argument telling it whether more calls are coming. Figuring out how
+      <code class="mono">f</code> can still know it has seen the <em>last</em> call is the puzzle. There's no hint for it here.
+    </p>
+  </section>
+
+  <section id="encode">
+    <h2 class="section-title">Encoder</h2>
+    <p class="lede">Write a short tinylisp program and turn it into a Puzzle program. Because N grows exponentially with
+      byte length (roughly 256 per extra byte), only very short programs are practical to actually run — that's a
+      property of the language, not a bug in this page.</p>
+
+    <div class="panel">
+      <h3>tinylisp source</h3>
+      <p class="desc">Primitives available: <code>quote</code> <code>atom</code> <code>eq</code> <code>car</code>
+        <code>cdr</code> <code>cons</code> <code>cond</code> <code>if</code> <code>lambda</code> <code>label</code>
+        <code>define</code>, arithmetic <code>+ - * / mod &lt; &gt; =</code>, and <code>print</code>.
+        Leading NUL bytes in your source will not survive encoding — N can't represent them.</p>
+      <textarea id="tinylispSrc" spellcheck="false">7</textarea>
+      <div class="row">
+        <button id="encodeBtn">Encode to Puzzle program</button>
+        <button class="secondary" id="testTinylispBtn">Test this tinylisp directly</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat">source bytes<b id="statBytes">—</b></div>
+        <div class="stat">N<b id="statN">—</b></div>
+        <div class="stat">backticks (2N)<b id="statBackticks">—</b></div>
+      </div>
+      <div class="tape mono" id="tape">encode a program to see it here</div>
+    </div>
+  </section>
+
+  <section id="interpreter">
+    <h2 class="section-title">Your interpreter</h2>
+    <p class="lede">Implement <code class="mono">f</code> below. It will be invoked exactly the way a real Puzzle
+      program invokes it: as the head of a tagged‑template chain, <code class="mono">2N</code> backticks long, N calls
+      total. Two helpers are available inside your code:</p>
+    <ul class="lede" style="margin-top:-6px;">
+      <li><code class="mono">runTinylisp(sourceString)</code> — parses and runs tinylisp source text directly.</li>
+      <li><code class="mono">runFromChainLength(n)</code> — given a chain length (a Number or BigInt), decodes it
+        back into bytes and runs the result as tinylisp for you.</li>
+    </ul>
+
+    <div class="panel">
+      <h3>
+        f.js
+        <span></span>
+      </h3>
+      <p class="desc">The stub below is deliberately empty. There is no scaffolding for counting calls or detecting
+        the end of the chain — that's the part to design.</p>
+      <textarea id="fCode" spellcheck="false">function f() {
+  // your implementation here
+}</textarea>
+      <div class="row">
+        <button class="secondary" id="resetFBtn">Reset to stub</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="run">
+    <h2 class="section-title">Run</h2>
+    <p class="lede">Runs the most recently encoded Puzzle program against your current <code class="mono">f</code>,
+      by literally constructing <code class="mono">f</code> followed by that many backticks and evaluating it — the
+      real JavaScript grammar, not a simulation of it.</p>
+
+    <div class="panel">
+      <h3>Console</h3>
+      <div class="row" style="margin-top:0;">
+        <button id="runBtn">Run Puzzle program</button>
+        <button class="secondary" id="clearBtn">Clear console</button>
+      </div>
+      <div class="console" id="console"><div class="line empty">— output will appear here —</div></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="wrap">
+  <p class="mono">Puzzle · a language with exactly one program shape and infinitely many lengths.</p>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     Decorative backtick rain (purely cosmetic, aria-hidden)
+     ============================================================ */
+  const rain = document.getElementById('tickRain');
+  if (rain) {
+    const lines = [];
+    for (let i=0;i<9;i++){
+      lines.push('`'.repeat(40 + (i*7)%30));
+    }
+    rain.textContent = lines.join('\n');
+  }
+
+  /* ============================================================
+     tinylisp — a minimal Lisp interpreter
+     ============================================================ */
+  class Sym { constructor(name){ this.name = name; } }
+  const symtab = new Map();
+  function intern(name){
+    if (!symtab.has(name)) symtab.set(name, new Sym(name));
+    return symtab.get(name);
+  }
+  const T = intern('t');
+  const NIL = [];
+
+  function tokenize(src){
+    src = src.replace(/;;.*$/gm, '');
+    src = src.replace(/([()'])/g, ' $1 ');
+    return src.split(/\s+/).filter(Boolean);
+  }
+  function parseExpr(toks){
+    if (toks.length === 0) throw new Error('Unexpected end of input');
+    const t = toks.shift();
+    if (t === '(') {
+      const list = [];
+      while (toks[0] !== ')') {
+        if (toks.length === 0) throw new Error('Missing closing )');
+        list.push(parseExpr(toks));
+      }
+      toks.shift();
+      return list;
+    }
+    if (t === ')') throw new Error('Unexpected )');
+    if (t === "'") return [intern('quote'), parseExpr(toks)];
+    if (/^-?\d+(\.\d+)?$/.test(t)) return parseFloat(t);
+    return intern(t);
+  }
+  function parseAll(src){
+    const toks = tokenize(src);
+    const forms = [];
+    while (toks.length) forms.push(parseExpr(toks));
+    return forms;
+  }
+
+  function isAtom(x){ return !Array.isArray(x) || x.length === 0; }
+  function truthy(x){ return !(Array.isArray(x) && x.length === 0); }
+  function eqVal(a, b){
+    if (a instanceof Sym && b instanceof Sym) return a === b;
+    if (typeof a === 'number' && typeof b === 'number') return a === b;
+    if (Array.isArray(a) && Array.isArray(b) && a.length === 0 && b.length === 0) return true;
+    return a === b;
+  }
+  function printExpr(x){
+    if (x instanceof Sym) return x.name;
+    if (typeof x === 'number') return String(x);
+    if (Array.isArray(x)) return '(' + x.map(printExpr).join(' ') + ')';
+    if (typeof x === 'function') return '#<primitive>';
+    if (x && x.isLambda) return '#<lambda>';
+    return String(x);
+  }
+  function lookup(sym, env){
+    let e = env;
+    while (e){ if (e.vars.has(sym.name)) return e.vars.get(sym.name); e = e.parent; }
+    throw new Error('Unbound symbol: ' + sym.name);
+  }
+  function evalCond(clauses, env){
+    for (const clause of clauses){
+      if (truthy(evl(clause[0], env))) return evl(clause[1], env);
+    }
+    return NIL;
+  }
+  function apply(fn, args){
+    if (typeof fn === 'function') return fn(...args);
+    if (fn && fn.isLambda){
+      const localEnv = { vars: new Map(), parent: fn.env };
+      fn.params.forEach((p,i) => localEnv.vars.set(p.name, args[i]));
+      if (fn.selfName) localEnv.vars.set(fn.selfName.name, fn);
+      return evl(fn.body, localEnv);
+    }
+    throw new Error('Attempt to call non-function: ' + printExpr(fn));
+  }
+  function evl(x, env){
+    if (typeof x === 'number') return x;
+    if (x instanceof Sym) return lookup(x, env);
+    if (Array.isArray(x)){
+      if (x.length === 0) return x;
+      const head = x[0];
+      if (head instanceof Sym){
+        switch(head.name){
+          case 'quote': return x[1];
+          case 'atom': return isAtom(evl(x[1], env)) ? T : NIL;
+          case 'eq': return eqVal(evl(x[1], env), evl(x[2], env)) ? T : NIL;
+          case 'car': { const v = evl(x[1], env); if (!Array.isArray(v) || v.length===0) throw new Error('car of non-pair'); return v[0]; }
+          case 'cdr': { const v = evl(x[1], env); if (!Array.isArray(v) || v.length===0) throw new Error('cdr of non-pair'); return v.slice(1); }
+          case 'cons': { const a = evl(x[1], env); const b = evl(x[2], env); if (!Array.isArray(b)) throw new Error('cons onto non-list'); return [a, ...b]; }
+          case 'cond': return evalCond(x.slice(1), env);
+          case 'if': return truthy(evl(x[1], env)) ? evl(x[2], env) : evl(x[3], env);
+          case 'lambda': return { isLambda:true, params:x[1], body:x[2], env };
+          case 'label': {
+            const nameSym = x[1];
+            const fnVal = evl(x[2], env);
+            if (fnVal && fnVal.isLambda) fnVal.selfName = nameSym;
+            return fnVal;
+          }
+          case 'define': { const name = x[1]; const val = evl(x[2], env); env.vars.set(name.name, val); return name; }
+          default: break;
+        }
+      }
+      const fn = evl(head, env);
+      const args = x.slice(1).map(a => evl(a, env));
+      return apply(fn, args);
+    }
+    throw new Error('Cannot evaluate expression');
+  }
+
+  function makeGlobalEnv(){
+    const vars = new Map();
+    const env = { vars, parent: null };
+    const prim = (name, fn) => vars.set(name, fn);
+    prim('+', (...a) => a.reduce((x,y)=>x+y, 0));
+    prim('-', (...a) => a.length === 1 ? -a[0] : a.reduce((x,y)=>x-y));
+    prim('*', (...a) => a.reduce((x,y)=>x*y, 1));
+    prim('/', (...a) => a.length === 1 ? 1/a[0] : a.reduce((x,y)=>x/y));
+    prim('mod', (a,b) => a % b);
+    prim('<', (a,b) => a < b ? T : NIL);
+    prim('>', (a,b) => a > b ? T : NIL);
+    prim('=', (a,b) => a === b ? T : NIL);
+    prim('list', (...a) => a);
+    prim('not', (a) => truthy(a) ? NIL : T);
+    prim('print', (a) => { log('lisp', printExpr(a)); return a; });
+    vars.set('t', T);
+    vars.set('nil', NIL);
+    return env;
+  }
+
+  function runTinylisp(source){
+    try {
+      const env = makeGlobalEnv();
+      const forms = parseAll(String(source));
+      if (forms.length === 0){ log('muted', '(empty tinylisp program)'); return; }
+      let result;
+      for (const form of forms) result = evl(form, env);
+      log('success', '=> ' + printExpr(result));
+    } catch(e){
+      log('error', 'tinylisp error: ' + e.message);
+    }
+  }
+
+  /* ============================================================
+     Big-integer <-> bytes, matching the Puzzle encoding
+     ============================================================ */
+  function bytesFromSource(str){ return new TextEncoder().encode(str); }
+  function nFromBytes(bytes){
+    let n = 0n;
+    for (const b of bytes) n = (n << 8n) | BigInt(b);
+    return n;
+  }
+  function bytesFromN(N){
+    if (N === 0n) return new Uint8Array(0);
+    const out = [];
+    let n = N;
+    while (n > 0n){ out.unshift(Number(n & 0xffn)); n >>= 8n; }
+    return new Uint8Array(out);
+  }
+  function runFromChainLength(n){
+    let N;
+    try { N = typeof n === 'bigint' ? n : BigInt(Math.trunc(Number(n))); }
+    catch(e){ log('error', 'runFromChainLength: could not interpret ' + n + ' as an integer'); return; }
+    if (N < 0n){ log('error', 'Chain length must be non-negative.'); return; }
+    const bytes = bytesFromN(N);
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal:false }).decode(bytes); }
+    catch(e){ log('error', 'Could not decode bytes as UTF-8: ' + e.message); return; }
+    log('info', 'chain length ' + N + ' → ' + bytes.length + ' byte(s) → ' + JSON.stringify(text));
+    runTinylisp(text);
+  }
+
+  /* ============================================================
+     Console logging
+     ============================================================ */
+  const consoleEl = document.getElementById('console');
+  function log(kind, msg){
+    if (consoleEl.querySelector('.empty')) consoleEl.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'line ' + kind;
+    div.textContent = msg;
+    consoleEl.appendChild(div);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+  window.addEventListener('error', (e) => {
+    log('error', 'uncaught error: ' + (e.message || e.error));
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    consoleEl.innerHTML = '<div class="line empty">— output will appear here —</div>';
+  });
+
+  /* ============================================================
+     Encoder panel
+     ============================================================ */
+  let currentN = null; // BigInt
+
+  const tinylispSrc = document.getElementById('tinylispSrc');
+  const statBytes = document.getElementById('statBytes');
+  const statN = document.getElementById('statN');
+  const statBackticks = document.getElementById('statBackticks');
+  const tapeEl = document.getElementById('tape');
+
+  const TAPE_PREVIEW_CAP = 4000; // chars of literal backtick preview to render
+
+  function formatBig(n){
+    const s = n.toString();
+    if (s.length > 40) return s.slice(0, 18) + '…' + s.slice(-14) + ' (' + s.length + ' digits)';
+    return s;
+  }
+
+  function doEncode(){
+    const src = tinylispSrc.value;
+    const bytes = bytesFromSource(src);
+    if (bytes.length === 0){
+      log('error', 'Enter a tinylisp program before encoding.');
+      return;
+    }
+    currentN = nFromBytes(bytes);
+    const totalTicks = currentN * 2n;
+    statBytes.textContent = String(bytes.length);
+    statN.textContent = formatBig(currentN);
+    statBackticks.textContent = formatBig(totalTicks);
+
+    if (totalTicks <= BigInt(TAPE_PREVIEW_CAP)){
+      tapeEl.textContent = 'f' + '`'.repeat(Number(totalTicks));
+    } else {
+      tapeEl.textContent = 'f' + '`'.repeat(TAPE_PREVIEW_CAP) +
+        ' … (' + formatBig(totalTicks) + ' backticks total — too long to display in full)';
+    }
+    log('info', 'Encoded ' + bytes.length + ' byte(s) → N = ' + formatBig(currentN) +
+      ' → ' + formatBig(totalTicks) + ' backtick(s).');
+  }
+
+  document.getElementById('encodeBtn').addEventListener('click', doEncode);
+  document.getElementById('testTinylispBtn').addEventListener('click', () => {
+    runTinylisp(tinylispSrc.value);
+  });
+
+  /* ============================================================
+     f.js panel
+     ============================================================ */
+  const fCode = document.getElementById('fCode');
+  const STUB = "function f() {\n  // your implementation here\n}";
+  document.getElementById('resetFBtn').addEventListener('click', () => {
+    fCode.value = STUB;
+  });
+
+  /* ============================================================
+     Run panel — literally builds "f" + backticks and evaluates it
+     ============================================================ */
+  const WARN_TICKS = 300000n;   // ask for confirmation above this many backticks
+  const HARD_CAP_TICKS = 20000000n; // refuse above this many backticks
+
+  document.getElementById('runBtn').addEventListener('click', () => {
+    if (currentN === null){
+      log('error', 'Encode a tinylisp program first — there is nothing to run yet.');
+      return;
+    }
+    const totalTicks = currentN * 2n;
+
+    if (totalTicks > HARD_CAP_TICKS){
+      log('error', 'This program needs N = ' + formatBig(currentN) + ' (' + formatBig(totalTicks) +
+        ' backticks). That is too large to construct and evaluate in a browser tab. Try a shorter tinylisp program (1–3 bytes is realistic).');
+      return;
+    }
+    if (totalTicks > WARN_TICKS){
+      const ok = window.confirm(
+        'This program requires ' + formatBig(totalTicks) + ' backtick characters (' + formatBig(currentN) +
+        ' chained calls) and may freeze the tab for a while. Continue?'
+      );
+      if (!ok) { log('muted', 'Run cancelled.'); return; }
+    }
+
+    log('info', 'Running Puzzle program: N = ' + formatBig(currentN) + ', ' + formatBig(totalTicks) + ' backticks…');
+
+    const ticks = '`'.repeat(Number(totalTicks));
+    const userCode = fCode.value;
+    const fullSource =
+      userCode + '\n' +
+      'if (typeof f !== "function") { throw new Error("f is not defined as a function"); }\n' +
+      'f' + ticks + ';\n';
+
+    try {
+      const runner = new Function('runTinylisp', 'runFromChainLength', fullSource);
+      runner(runTinylisp, runFromChainLength);
+      log('muted', '(chain dispatched — asynchronous work, if any, will log above as it completes)');
+    } catch(e){
+      log('error', 'Error while running your f: ' + e.message);
+    }
+  });
+
+  /* Encode the default example on load so the page isn't empty. */
+  doEncode();
+})();
+</script>
+</body>
+</html>
