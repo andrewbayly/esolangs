@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nonce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181A;
+    --surface:#1B2024;
+    --surface-2:#20262B;
+    --surface-3:#262D33;
+    --rule:#333B41;
+    --rule-soft:#282F35;
+    --text:#E4E1D6;
+    --text-dim:#8B929A;
+    --text-faint:#5B6167;
+    --gold:#C9A227;
+    --gold-bright:#EFC94C;
+    --copper:#B97449;
+    --danger:#C15B4A;
+    --radius:3px;
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold); color:var(--ink);}
+
+  a{color:var(--gold-bright);}
+
+  button{
+    font-family:var(--font-body);
+    cursor:pointer;
+  }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--gold-bright);
+    outline-offset:2px;
+  }
+
+  .wrap{
+    max-width:840px;
+    margin:0 auto;
+    padding:0 20px 100px;
+  }
+
+  /* ---------- Header ---------- */
+  header.top{
+    border-bottom:1px solid var(--rule);
+    padding:28px 0 22px;
+    margin-bottom:36px;
+  }
+  .top-inner{
+    max-width:840px;
+    margin:0 auto;
+    padding:0 20px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    flex-wrap:wrap;
+  }
+  .wordmark{
+    font-family:var(--font-display);
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:34px;
+    letter-spacing:0.01em;
+    color:var(--text);
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .wordmark .mark{
+    color:var(--gold);
+    font-variant-numeric:tabular-nums;
+  }
+  .tagline{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-top:4px;
+    letter-spacing:0.02em;
+  }
+
+  .mode-block{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:6px;
+  }
+  .mode-toggle{
+    display:inline-flex;
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:3px;
+    gap:2px;
+  }
+  .mode-toggle button{
+    border:none;
+    background:transparent;
+    color:var(--text-dim);
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:7px 16px;
+    border-radius:999px;
+    transition:background .15s ease, color .15s ease;
+  }
+  .mode-toggle button.active{
+    background:var(--gold);
+    color:var(--ink);
+  }
+  .mode-readout{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-faint);
+  }
+  .mode-readout b{ color:var(--gold-bright); font-weight:600; }
+
+  /* ---------- Ledger entries ---------- */
+  .entry{
+    margin-bottom:40px;
+  }
+  .entry-head{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    border-top:1px solid var(--rule);
+    padding-top:14px;
+    margin-bottom:16px;
+  }
+  .entry-num{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--gold);
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:50%;
+    width:26px;
+    height:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:none;
+  }
+  .entry-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:21px;
+  }
+  .entry-sub{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-left:auto;
+  }
+  .card{
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+  .card + .card{ margin-top:12px; }
+
+  label.field-label{
+    display:block;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+
+  textarea, .code-view{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    color:var(--text);
+    font-family:var(--font-mono);
+    font-size:14px;
+    padding:12px 14px;
+    resize:vertical;
+    line-height:1.6;
+  }
+  textarea{ min-height:88px; }
+
+  .status-line{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:10px;
+    font-size:13px;
+    font-family:var(--font-mono);
+  }
+  .status-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--text-faint);
+    flex:none;
+  }
+  .status-dot.ok{ background:#7BA05B; }
+  .status-dot.bad{ background:var(--danger); }
+  .status-text.ok{ color:#9DC17E; }
+  .status-text.bad{ color:var(--danger); }
+  .status-text{ color:var(--text-dim); }
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:14px;
+  }
+  .chip{
+    font-family:var(--font-mono);
+    font-size:12px;
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    color:var(--text-dim);
+    padding:6px 11px;
+    border-radius:999px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .chip:hover{ border-color:var(--gold); color:var(--gold-bright); }
+
+  .btn{
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    border-radius:var(--radius);
+    padding:10px 18px;
+    border:1px solid var(--gold);
+    background:var(--gold);
+    color:var(--ink);
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .btn:hover:not(:disabled){ background:var(--gold-bright); border-color:var(--gold-bright); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn.ghost{
+    background:transparent;
+    color:var(--text);
+    border:1px solid var(--rule);
+  }
+  .btn.ghost:hover:not(:disabled){ border-color:var(--gold); color:var(--ink); }
+  .btn.small{ padding:7px 13px; font-size:12px; }
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  /* ---------- Encode/Mine ---------- */
+  .preview{
+    font-family:var(--font-mono);
+    font-size:14px;
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    word-break:break-all;
+    line-height:1.7;
+  }
+  .preview .bf-part{ color:var(--text); }
+  .preview .sep{ color:var(--text-faint); }
+  .preview .nonce-part{ color:var(--copper); }
+
+  .target-line{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:12px;
+  }
+  .target-line b{ color:var(--gold-bright); font-weight:600; }
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    margin-top:16px;
+  }
+  .stat-box{
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:10px 12px;
+  }
+  .stat-box .label{ font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-faint); }
+  .stat-box .value{ font-family:var(--font-mono); font-size:16px; color:var(--text); margin-top:3px; font-variant-numeric:tabular-nums; }
+
+  .hash-feed{
+    margin-top:12px;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    color:var(--text-faint);
+    background:var(--surface-2);
+    border:1px solid var(--rule-soft);
+    border-radius:var(--radius);
+    padding:8px 12px;
+    height:96px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column-reverse;
+  }
+  .hash-feed div{ white-space:nowrap; opacity:0.85; }
+  .hash-feed div:first-child{ opacity:1; color:var(--text-dim); }
+
+  .result-panel{
+    margin-top:16px;
+    border-top:1px dashed var(--rule);
+    padding-top:16px;
+  }
+
+  .timeout-card{
+    margin-top:16px;
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+  .timeout-card .headline{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:18px;
+    color:var(--gold-bright);
+    margin-bottom:4px;
+  }
+  .timeout-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 20px;
+    margin-top:12px;
+    font-size:13px;
+  }
+  .timeout-grid dt{ color:var(--text-faint); font-size:11px; text-transform:uppercase; letter-spacing:0.05em; }
+  .timeout-grid dd{ margin:2px 0 0; font-family:var(--font-mono); color:var(--text); }
+
+  /* ---------- Hash / bits display ---------- */
+  .hash-display{
+    font-family:var(--font-mono);
+    font-size:13.5px;
+    word-break:break-all;
+    line-height:1.8;
+  }
+  .hash-display .zero-bits{
+    color:var(--gold-bright);
+    background:rgba(201,162,39,0.16);
+    border-radius:2px;
+  }
+
+  /* ---------- Stamp ---------- */
+  .stamp-slot{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:0;
+  }
+  .stamp{
+    width:118px;
+    height:118px;
+    opacity:0;
+    transform:scale(1.6) rotate(-9deg);
+  }
+  .stamp.punch{
+    animation:stampPunch 480ms cubic-bezier(.2,.9,.3,1) forwards;
+  }
+  @keyframes stampPunch{
+    0%{ opacity:0; transform:scale(2) rotate(-9deg); }
+    45%{ opacity:1; transform:scale(0.92) rotate(-9deg); }
+    62%{ transform:scale(1.04) rotate(-9deg); }
+    100%{ opacity:1; transform:scale(1) rotate(-9deg); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .stamp.punch{ animation:none; opacity:1; transform:scale(1) rotate(-9deg); }
+  }
+
+  /* ---------- Execute ---------- */
+  .exec-controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .speed-control{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-left:auto;
+  }
+  .speed-control input[type=range]{ width:110px; accent-color:var(--gold); }
+
+  .output-pane{
+    margin-top:14px;
+    background:#0F1214;
+    border:1px solid var(--rule);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:#D8D2C0;
+    min-height:70px;
+    max-height:220px;
+    overflow-y:auto;
+    white-space:pre-wrap;
+    word-break:break-all;
+  }
+  .output-pane .caret{
+    display:inline-block;
+    width:7px; height:14px;
+    background:var(--gold-bright);
+    vertical-align:middle;
+    animation:blink 1s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .exec-meta{
+    display:flex;
+    justify-content:space-between;
+    font-size:11.5px;
+    color:var(--text-faint);
+    margin-top:6px;
+    font-family:var(--font-mono);
+  }
+
+  .tape-view{
+    margin-top:14px;
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .tape-cell{
+    flex:none;
+    width:46px;
+    text-align:center;
+    font-family:var(--font-mono);
+  }
+  .tape-cell .idx{ font-size:9px; color:var(--text-faint); }
+  .tape-cell .val{
+    font-size:13px;
+    background:var(--surface-2);
+    border:1px solid var(--rule);
+    border-radius:2px;
+    padding:6px 0;
+    margin-top:2px;
+    color:var(--text);
+  }
+  .tape-cell.ptr .val{
+    border-color:var(--gold);
+    color:var(--gold-bright);
+    background:rgba(201,162,39,0.1);
+  }
+  .tape-cell .caretup{
+    font-size:10px; color:var(--gold);
+    height:12px;
+    visibility:hidden;
+  }
+  .tape-cell.ptr .caretup{ visibility:visible; }
+
+  .pause-note{
+    margin-top:12px;
+    font-size:12.5px;
+    background:rgba(193,91,74,0.12);
+    border:1px solid rgba(193,91,74,0.4);
+    color:#E0A79B;
+    border-radius:var(--radius);
+    padding:10px 12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .io-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:16px;
+  }
+  @media (max-width:600px){
+    .io-row{ grid-template-columns:1fr; }
+    .stats-grid{ grid-template-columns:1fr 1fr; }
+    .timeout-grid{ grid-template-columns:1fr; }
+  }
+
+  footer.foot{
+    max-width:840px;
+    margin:60px auto 0;
+    padding:20px;
+    border-top:1px solid var(--rule);
+    font-size:12px;
+    color:var(--text-faint);
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div>
+      <div class="wordmark">NONCE<span class="mark">.</span></div>
+      <div class="tagline">a brainfuck program is only valid once its file hashes to a run of leading zero bits — hard to write, trivial to verify.</div>
+    </div>
+    <div class="mode-block">
+      <div class="mode-toggle" role="group" aria-label="Difficulty mode">
+        <button id="mode-demo" class="active" aria-pressed="true">Demo</button>
+        <button id="mode-prod" aria-pressed="false">Production</button>
+      </div>
+      <div class="mode-readout">target: <b id="k-readout">k = 8</b> leading zero bits</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ SECTION 1: WRITE ============ -->
+  <section class="entry" id="section-write">
+    <div class="entry-head">
+      <div class="entry-num">01</div>
+      <div class="entry-title">Write</div>
+      <div class="entry-sub">standard brainfuck</div>
+    </div>
+    <div class="card">
+      <label class="field-label" for="bf-input">BF source</label>
+      <textarea id="bf-input" spellcheck="false" autocapitalize="off" autocomplete="off">+[.+]</textarea>
+      <div class="status-line">
+        <span class="status-dot" id="bf-status-dot"></span>
+        <span class="status-text" id="bf-status-text">checking…</span>
+      </div>
+      <div class="chip-row">
+        <button class="chip" data-example="+[.+]">ASCII ramp — +[.+]</button>
+        <button class="chip" data-example="++++++++[&gt;++++[&gt;++&gt;+++&gt;+++&gt;+&lt;&lt;&lt;&lt;-]&gt;+&gt;+&gt;-&gt;&gt;+[&lt;]&lt;-]&gt;&gt;.&gt;---.+++++++..+++.&gt;&gt;.&lt;-.&lt;.+++.------.--------.&gt;&gt;+.&gt;++.">Hello, World!</button>
+        <button class="chip" data-example=",[.,]">Cat (echoes input) — ,[.,]</button>
+        <button class="chip" data-example="">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 2: ENCODE / MINE ============ -->
+  <section class="entry" id="section-encode">
+    <div class="entry-head">
+      <div class="entry-num">02</div>
+      <div class="entry-title">Encode &amp; find nonce</div>
+      <div class="entry-sub">the nonce-finder tool</div>
+    </div>
+    <div class="card">
+      <label class="field-label">Source under construction</label>
+      <div class="preview" id="encode-preview">
+        <span class="bf-part">+[.+]</span><span class="sep"> </span><span class="nonce-part">&lt;nonce&gt;</span>
+      </div>
+      <div class="target-line" id="encode-target">
+        Valid once SHA-256 of the whole file begins with <b>8 zero bits</b> — roughly 1 in 256 candidate nonces qualify.
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn" id="btn-find-nonce">Find nonce</button>
+        <button class="btn ghost" id="btn-stop-search" disabled>Stop</button>
+      </div>
+
+      <div id="demo-search-panel" style="display:none;">
+        <div class="stats-grid">
+          <div class="stat-box"><div class="label">Attempts</div><div class="value" id="stat-attempts">0</div></div>
+          <div class="stat-box"><div class="label">Elapsed</div><div class="value" id="stat-elapsed">0.0s</div></div>
+          <div class="stat-box"><div class="label">Rate</div><div class="value" id="stat-rate">0 h/s</div></div>
+        </div>
+        <div class="hash-feed" id="hash-feed"></div>
+      </div>
+
+      <div id="found-panel" class="result-panel" style="display:none;">
+        <div class="stamp-slot"><div class="stamp" id="stamp-found">STAMP_SVG_FOUND</div></div>
+        <label class="field-label">Winning nonce</label>
+        <div class="code-view" id="found-nonce" style="word-break:break-all;"></div>
+        <label class="field-label" style="margin-top:12px;">Hash</label>
+        <div class="hash-display" id="found-hash"></div>
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn" id="btn-send-to-validate">Send to Validate &amp; Execute →</button>
+        </div>
+      </div>
+
+      <div id="timeout-panel" class="timeout-card" style="display:none;">
+        <div class="headline">This will not finish in a browser tab.</div>
+        <div style="font-size:13px; color:var(--text-dim);">Production requires k = 32 — the interpreter benchmarked your device's real hash rate instead of attempting the search.</div>
+        <dl class="timeout-grid">
+          <div><dt>Measured rate</dt><dd id="to-rate">—</dd></div>
+          <div><dt>Expected attempts</dt><dd id="to-attempts">2³² ≈ 4,294,967,296</dd></div>
+          <div><dt>Estimated time</dt><dd id="to-time">—</dd></div>
+          <div><dt>Odds per attempt</dt><dd id="to-odds">1 in 4,294,967,296</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SECTION 3: VALIDATE & EXECUTE ============ -->
+  <section class="entry" id="section-validate">
+    <div class="entry-head">
+      <div class="entry-num">03</div>
+      <div class="entry-title">Validate &amp; execute</div>
+      <div class="entry-sub">paste any Nonce source</div>
+    </div>
+    <div class="card">
+      <label class="field-label" for="source-input">Full source file (program + space + nonce)</label>
+      <textarea id="source-input" spellcheck="false" autocapitalize="off" autocomplete="off" style="min-height:70px;"></textarea>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn" id="btn-validate">Validate</button>
+      </div>
+
+      <div id="validate-result" class="result-panel" style="display:none;">
+        <div class="stamp-slot"><div class="stamp" id="stamp-validate">STAMP_SVG_VALIDATE</div></div>
+        <div class="status-line" id="validate-status-line"></div>
+        <label class="field-label" style="margin-top:10px;">Hash</label>
+        <div class="hash-display" id="validate-hash"></div>
+      </div>
+    </div>
+
+    <div class="card" id="exec-card" style="display:none; margin-top:14px;">
+      <label class="field-label">Program input (consumed by <code>,</code>, EOF reads as 0)</label>
+      <textarea id="stdin-input" style="min-height:44px;" placeholder="optional input for , commands"></textarea>
+
+      <div class="exec-controls">
+        <button class="btn small" id="btn-run">Run</button>
+        <button class="btn ghost small" id="btn-step">Step</button>
+        <button class="btn ghost small" id="btn-pause" disabled>Pause</button>
+        <button class="btn ghost small" id="btn-reset">Reset</button>
+        <div class="speed-control">
+          <span>speed</span>
+          <input type="range" id="speed-slider" min="1" max="500" value="60">
+        </div>
+      </div>
+
+      <div class="io-row">
+        <div>
+          <label class="field-label" style="margin-top:14px;">Output</label>
+          <div class="output-pane" id="output-pane"><span class="caret"></span></div>
+          <div class="exec-meta">
+            <span id="output-mode-toggle" style="cursor:pointer; text-decoration:underline; text-decoration-style:dotted;">show as byte codes</span>
+            <span id="output-count">0 chars</span>
+          </div>
+        </div>
+        <div>
+          <label class="field-label" style="margin-top:14px;">Status</label>
+          <div class="code-view" id="exec-status" style="font-size:12.5px; min-height:70px; max-height:220px; overflow-y:auto;">idle</div>
+        </div>
+      </div>
+
+      <div id="pause-note" class="pause-note" style="display:none;">
+        <span id="pause-note-text"></span>
+        <button class="btn small" id="btn-continue">Continue</button>
+      </div>
+
+      <label class="field-label" style="margin-top:16px;">Tape (window around pointer)</label>
+      <div class="tape-view" id="tape-view"></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot">
+  Nonce — SHA-256(program + " " + nonce) must begin with k zero bits. No secret, no trusted party: anyone can search, anyone can verify.
+</footer>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =========================================================
+     STATE
+  ========================================================= */
+  const state = {
+    mode: 'demo',
+    k: 8,
+    searching: false,
+    searchToken: 0,
+  };
+
+  const TAPE_LEN = 30000;
+  const MAX_STEPS_PER_RUN = 5000000;
+  const MAX_OUTPUT_CHARS = 200000;
+
+  /* =========================================================
+     UTIL: hashing + bit counting
+  ========================================================= */
+  async function sha256hex(str){
+    const bytes = new TextEncoder().encode(str); // ASCII-only content, UTF-8 encoding is identity for it
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function leadingZeroBits(hex){
+    let bits = 0;
+    for (let i = 0; i < hex.length; i++){
+      const nibble = parseInt(hex[i], 16);
+      if (nibble === 0){ bits += 4; continue; }
+      for (let b = 3; b >= 0; b--){
+        if ((nibble >> b) & 1) return bits;
+        bits++;
+      }
+      return bits;
+    }
+    return bits;
+  }
+
+  function randomBitString(len){
+    let s = '';
+    for (let i = 0; i < len; i++) s += Math.random() < 0.5 ? '0' : '1';
+    return s;
+  }
+
+  function fmtInt(n){ return n.toLocaleString('en-US'); }
+
+  function fmtDuration(seconds){
+    if (!isFinite(seconds)) return '—';
+    if (seconds < 60) return seconds.toFixed(1) + 's';
+    const min = seconds/60, hr = seconds/3600, day = seconds/86400, yr = seconds/31557600;
+    if (seconds < 3600) return min.toFixed(1) + ' min';
+    if (seconds < 86400) return hr.toFixed(1) + ' hours';
+    if (seconds < 31557600) return day.toFixed(1) + ' days';
+    return yr.toFixed(1) + ' years';
+  }
+
+  /* =========================================================
+     STAMP (signature element)
+  ========================================================= */
+  function stampSVG(passed, bits){
+    const ring = passed ? 'var(--gold)' : 'var(--danger)';
+    const label = passed ? 'VALID' : 'REJECTED';
+    const sub = passed ? ('\u0394' + bits + ' bits') : ('only ' + bits);
+    return `
+      <svg viewBox="0 0 120 120" width="118" height="118" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="ink${passed?'P':'R'}${bits}" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 10 -3.6"/>
+            <feComposite operator="in" in2="SourceGraphic"/>
+          </filter>
+        </defs>
+        <g filter="url(#ink${passed?'P':'R'}${bits})">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="${ring}" stroke-width="3.5"/>
+          <circle cx="60" cy="60" r="43" fill="none" stroke="${ring}" stroke-width="1.4"/>
+          ${Array.from({length:24}).map((_,i)=>{
+            const a = (i/24)*Math.PI*2;
+            const x1 = 60+Math.cos(a)*47, y1=60+Math.sin(a)*47;
+            const x2 = 60+Math.cos(a)*52, y2=60+Math.sin(a)*52;
+            return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${ring}" stroke-width="1.4"/>`;
+          }).join('')}
+          <text x="60" y="57" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="700" fill="${ring}" letter-spacing="1">${label}</text>
+          <text x="60" y="74" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="${ring}" letter-spacing="0.5">${sub}</text>
+        </g>
+      </svg>`;
+  }
+
+  function fireStamp(el, passed, bits){
+    el.classList.remove('punch');
+    el.innerHTML = stampSVG(passed, bits);
+    // force reflow so the animation restarts
+    void el.offsetWidth;
+    el.classList.add('punch');
+  }
+
+  /* =========================================================
+     MODE TOGGLE
+  ========================================================= */
+  const modeDemoBtn = document.getElementById('mode-demo');
+  const modeProdBtn = document.getElementById('mode-prod');
+  const kReadout = document.getElementById('k-readout');
+  const encodeTarget = document.getElementById('encode-target');
+
+  function setMode(mode){
+    state.mode = mode;
+    state.k = mode === 'demo' ? 8 : 32;
+    modeDemoBtn.classList.toggle('active', mode==='demo');
+    modeProdBtn.classList.toggle('active', mode==='prod');
+    modeDemoBtn.setAttribute('aria-pressed', mode==='demo');
+    modeProdBtn.setAttribute('aria-pressed', mode==='prod');
+    kReadout.textContent = 'k = ' + state.k;
+    encodeTarget.innerHTML = mode === 'demo'
+      ? 'Valid once SHA-256 of the whole file begins with <b>8 zero bits</b> — roughly 1 in 256 candidate nonces qualify.'
+      : 'Valid once SHA-256 of the whole file begins with <b>32 zero bits</b> — roughly 1 in 4,294,967,296 candidate nonces qualify.';
+    // reset panels
+    document.getElementById('demo-search-panel').style.display = 'none';
+    document.getElementById('found-panel').style.display = 'none';
+    document.getElementById('timeout-panel').style.display = 'none';
+    stopSearch();
+    document.getElementById('btn-find-nonce').textContent = 'Find nonce';
+  }
+  modeDemoBtn.addEventListener('click', () => setMode('demo'));
+  modeProdBtn.addEventListener('click', () => setMode('prod'));
+
+  /* =========================================================
+     SECTION 1: WRITE — BF validation
+  ========================================================= */
+  const bfInput = document.getElementById('bf-input');
+  const bfStatusDot = document.getElementById('bf-status-dot');
+  const bfStatusText = document.getElementById('bf-status-text');
+  const VALID_CHARS = new Set(['>','<','+','-','.',',','[',']']);
+
+  function checkBF(program){
+    if (program.length === 0){
+      return { valid:false, message:'empty — write a program' };
+    }
+    let depth = 0;
+    for (let i = 0; i < program.length; i++){
+      const c = program[i];
+      if (!VALID_CHARS.has(c)){
+        return { valid:false, message:`invalid character "${c}" at position ${i}` };
+      }
+      if (c === '[') depth++;
+      if (c === ']'){
+        depth--;
+        if (depth < 0) return { valid:false, message:`unmatched "]" at position ${i}` };
+      }
+    }
+    if (depth > 0) return { valid:false, message:`${depth} unmatched "["` };
+    return { valid:true, message:`valid brainfuck — ${program.length} instructions` };
+  }
+
+  // The editor accepts whitespace and any non-command characters as comments,
+  // per the classic brainfuck convention. They're silently dropped when the
+  // program moves on to encoding — the Nonce file format itself still permits
+  // no whitespace within the BF program, so section 3 validates raw, unfiltered.
+  function sanitizeBF(text){
+    return [...text].filter(c => VALID_CHARS.has(c)).join('');
+  }
+
+  function refreshBFStatus(){
+    const raw = bfInput.value;
+    const program = sanitizeBF(raw);
+    const ignored = raw.length - program.length;
+    const res = checkBF(program);
+    bfStatusDot.className = 'status-dot ' + (res.valid ? 'ok' : 'bad');
+    bfStatusText.className = 'status-text ' + (res.valid ? 'ok' : 'bad');
+    let message = res.message;
+    if (ignored > 0){
+      message += ` (${ignored} comment/whitespace character${ignored===1?'':'s'} ignored)`;
+    }
+    bfStatusText.textContent = message;
+    updateEncodePreview();
+    return { valid: res.valid, program };
+  }
+
+  bfInput.addEventListener('input', refreshBFStatus);
+
+  document.querySelectorAll('.chip[data-example]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      bfInput.value = btn.dataset.example;
+      refreshBFStatus();
+    });
+  });
+
+  /* =========================================================
+     SECTION 2: ENCODE & MINE
+  ========================================================= */
+  const encodePreview = document.getElementById('encode-preview');
+  const btnFind = document.getElementById('btn-find-nonce');
+  const btnStop = document.getElementById('btn-stop-search');
+  const demoPanel = document.getElementById('demo-search-panel');
+  const statAttempts = document.getElementById('stat-attempts');
+  const statElapsed = document.getElementById('stat-elapsed');
+  const statRate = document.getElementById('stat-rate');
+  const hashFeed = document.getElementById('hash-feed');
+  const foundPanel = document.getElementById('found-panel');
+  const foundNonceEl = document.getElementById('found-nonce');
+  const foundHashEl = document.getElementById('found-hash');
+  const timeoutPanel = document.getElementById('timeout-panel');
+
+  function updateEncodePreview(){
+    const bf = sanitizeBF(bfInput.value) || '<bf program>';
+    encodePreview.innerHTML = `<span class="bf-part">${escapeHTML(bf)}</span><span class="sep"> </span><span class="nonce-part">&lt;nonce&gt;</span>`;
+  }
+
+  function escapeHTML(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function renderHashDisplay(hex, bits){
+    const zeroHexChars = Math.floor(bits/4);
+    const remBits = bits % 4;
+    let head = hex.slice(0, zeroHexChars);
+    let mid = '';
+    if (remBits > 0){ mid = hex[zeroHexChars]; }
+    const restStart = zeroHexChars + (remBits > 0 ? 1 : 0);
+    const rest = hex.slice(restStart);
+    return `<span class="zero-bits">${head}${mid}</span>${rest}`;
+  }
+
+  function stopSearch(){
+    state.searching = false;
+    state.searchToken++;
+    btnFind.disabled = false;
+    btnStop.disabled = true;
+  }
+
+  async function startDemoSearch(){
+    const { valid, program } = refreshBFStatus();
+    if (!valid){ alert('Fix the brainfuck program in section 01 first.'); return; }
+    const bf = program;
+
+    demoPanel.style.display = 'block';
+    foundPanel.style.display = 'none';
+    hashFeed.innerHTML = '';
+    btnFind.disabled = true;
+    btnStop.disabled = false;
+    state.searching = true;
+    const myToken = ++state.searchToken;
+
+    let attempts = 0;
+    const startTime = performance.now();
+    const BATCH = 15;
+
+    async function tick(){
+      if (!state.searching || state.searchToken !== myToken) return;
+      for (let i = 0; i < BATCH; i++){
+        attempts++;
+        const nonce = randomBitString(20);
+        const file = bf + ' ' + nonce;
+        const hex = await sha256hex(file);
+        const bits = leadingZeroBits(hex);
+
+        const row = document.createElement('div');
+        row.textContent = nonce.slice(0,16) + (nonce.length>16?'…':'') + '  →  ' + hex.slice(0,16) + '…';
+        hashFeed.prepend(row);
+        while (hashFeed.children.length > 8) hashFeed.removeChild(hashFeed.lastChild);
+
+        if (bits >= state.k){
+          state.searching = false;
+          const elapsed = (performance.now()-startTime)/1000;
+          statAttempts.textContent = fmtInt(attempts);
+          statElapsed.textContent = elapsed.toFixed(2) + 's';
+          statRate.textContent = fmtInt(Math.round(attempts/Math.max(elapsed,0.001))) + ' h/s';
+
+          foundPanel.style.display = 'block';
+          foundNonceEl.textContent = nonce;
+          foundHashEl.innerHTML = renderHashDisplay(hex, bits) + `<div style="margin-top:6px; color:var(--text-faint); font-size:11.5px;">${bits} leading zero bits (target: ${state.k})</div>`;
+          fireStamp(document.getElementById('stamp-found'), true, bits);
+
+          btnFind.disabled = false;
+          btnStop.disabled = true;
+          document.getElementById('btn-send-to-validate').onclick = () => {
+            document.getElementById('source-input').value = file;
+            document.getElementById('section-validate').scrollIntoView({behavior:'smooth', block:'start'});
+          };
+          return;
+        }
+      }
+      const elapsed = (performance.now()-startTime)/1000;
+      statAttempts.textContent = fmtInt(attempts);
+      statElapsed.textContent = elapsed.toFixed(2) + 's';
+      statRate.textContent = fmtInt(Math.round(attempts/Math.max(elapsed,0.001))) + ' h/s';
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  async function runProductionEstimate(){
+    const { valid, program } = refreshBFStatus();
+    if (!valid){ alert('Fix the brainfuck program in section 01 first.'); return; }
+    const bf = program;
+
+    demoPanel.style.display = 'none';
+    foundPanel.style.display = 'none';
+    timeoutPanel.style.display = 'block';
+    document.getElementById('to-rate').textContent = 'benchmarking…';
+    document.getElementById('to-time').textContent = '…';
+    btnFind.disabled = true;
+    btnStop.disabled = true;
+
+    const benchMs = 1200;
+    const start = performance.now();
+    let count = 0;
+    while (performance.now() - start < benchMs){
+      const nonce = randomBitString(24);
+      await sha256hex(bf + ' ' + nonce);
+      count++;
+    }
+    const elapsedSec = (performance.now()-start)/1000;
+    const rate = count/elapsedSec;
+    const expectedAttempts = Math.pow(2, state.k);
+    const estSeconds = expectedAttempts / rate;
+
+    document.getElementById('to-rate').textContent = fmtInt(Math.round(rate)) + ' hashes/sec (this device, single tab)';
+    document.getElementById('to-attempts').textContent = fmtInt(expectedAttempts) + ' (2³²)';
+    document.getElementById('to-time').textContent = fmtDuration(estSeconds);
+    document.getElementById('to-odds').textContent = '1 in ' + fmtInt(expectedAttempts);
+
+    btnFind.disabled = false;
+  }
+
+  btnFind.addEventListener('click', () => {
+    if (state.mode === 'demo') startDemoSearch();
+    else runProductionEstimate();
+  });
+  btnStop.addEventListener('click', stopSearch);
+
+  /* =========================================================
+     SECTION 3: VALIDATE
+  ========================================================= */
+  const sourceInput = document.getElementById('source-input');
+  const btnValidate = document.getElementById('btn-validate');
+  const validateResult = document.getElementById('validate-result');
+  const validateStatusLine = document.getElementById('validate-status-line');
+  const validateHash = document.getElementById('validate-hash');
+  const execCard = document.getElementById('exec-card');
+
+  btnValidate.addEventListener('click', async () => {
+    const src = sourceInput.value;
+    const spaceIdx = src.indexOf(' ');
+    validateResult.style.display = 'block';
+
+    if (spaceIdx === -1){
+      validateStatusLine.innerHTML = `<span class="status-dot bad"></span><span class="status-text bad">no delimiter space found — expected "&lt;bf program&gt; &lt;nonce&gt;"</span>`;
+      validateHash.innerHTML = '';
+      fireStamp(document.getElementById('stamp-validate'), false, 0);
+      execCard.style.display = 'none';
+      return;
+    }
+
+    const bfPart = src.slice(0, spaceIdx);
+    const noncePart = src.slice(spaceIdx+1);
+    const bfCheck = checkBF(bfPart);
+    const nonceOK = /^[01]*$/.test(noncePart) && noncePart.length > 0;
+
+    const hex = await sha256hex(src);
+    const bits = leadingZeroBits(hex);
+    const hashOK = bits >= state.k;
+    const passed = bfCheck.valid && nonceOK && hashOK;
+
+    let msg;
+    if (!bfCheck.valid) msg = 'invalid brainfuck: ' + bfCheck.message;
+    else if (!nonceOK) msg = 'nonce must be a non-empty string of 0/1 characters';
+    else if (!hashOK) msg = `only ${bits} leading zero bits — needs ${state.k} (mode: ${state.mode})`;
+    else msg = `valid — ${bits} leading zero bits, program executable`;
+
+    validateStatusLine.innerHTML = `<span class="status-dot ${passed?'ok':'bad'}"></span><span class="status-text ${passed?'ok':'bad'}">${msg}</span>`;
+    validateHash.innerHTML = renderHashDisplay(hex, Math.min(bits, hex.length*4)) + `<div style="margin-top:6px; color:var(--text-faint); font-size:11.5px;">SHA-256 of full source, ${hex.length*4} bits</div>`;
+    fireStamp(document.getElementById('stamp-validate'), passed, bits);
+
+    if (passed){
+      execCard.style.display = 'block';
+      loadProgram(bfPart);
+    } else {
+      execCard.style.display = 'none';
+    }
+  });
+
+  /* =========================================================
+     SECTION 3: EXECUTE — BF interpreter (wrapping cells + pointer)
+  ========================================================= */
+  const exec = {
+    program: '',
+    jump: new Map(),
+    tape: new Uint8Array(TAPE_LEN),
+    ptr: 0,
+    pc: 0,
+    steps: 0,
+    output: [],
+    running: false,
+    finished: false,
+    inputQueue: [],
+    inputPos: 0,
+    outputMode: 'text', // 'text' | 'bytes'
+    rafHandle: null,
+  };
+
+  const outputPane = document.getElementById('output-pane');
+  const outputCount = document.getElementById('output-count');
+  const execStatus = document.getElementById('exec-status');
+  const tapeView = document.getElementById('tape-view');
+  const pauseNote = document.getElementById('pause-note');
+  const pauseNoteText = document.getElementById('pause-note-text');
+  const btnRun = document.getElementById('btn-run');
+  const btnStep = document.getElementById('btn-step');
+  const btnPause = document.getElementById('btn-pause');
+  const btnReset = document.getElementById('btn-reset');
+  const btnContinue = document.getElementById('btn-continue');
+  const speedSlider = document.getElementById('speed-slider');
+  const stdinInput = document.getElementById('stdin-input');
+  const outputModeToggle = document.getElementById('output-mode-toggle');
+
+  function buildJumpMap(program){
+    const jump = new Map();
+    const stack = [];
+    for (let i = 0; i < program.length; i++){
+      if (program[i] === '[') stack.push(i);
+      else if (program[i] === ']'){
+        const open = stack.pop();
+        jump.set(open, i);
+        jump.set(i, open);
+      }
+    }
+    return jump;
+  }
+
+  function loadProgram(program){
+    exec.program = program;
+    exec.jump = buildJumpMap(program);
+    resetExec(false);
+  }
+
+  function resetExec(clearOutput){
+    exec.tape = new Uint8Array(TAPE_LEN);
+    exec.ptr = 0;
+    exec.pc = 0;
+    exec.steps = 0;
+    exec.running = false;
+    exec.finished = false;
+    exec.inputQueue = [...stdinInput.value].map(c => c.charCodeAt(0));
+    exec.inputPos = 0;
+    if (clearOutput !== false) exec.output = [];
+    pauseNote.style.display = 'none';
+    btnPause.disabled = true;
+    execStatus.textContent = 'idle — ' + exec.program.length + ' instructions loaded';
+    renderOutput();
+    renderTape();
+  }
+
+  function renderOutput(){
+    const text = exec.output.map(c => String.fromCharCode(c)).join('');
+    if (exec.outputMode === 'text'){
+      outputPane.innerHTML = escapeHTML(text) + (exec.running ? '<span class="caret"></span>' : '');
+    } else {
+      outputPane.textContent = exec.output.join(' ');
+    }
+    outputPane.scrollTop = outputPane.scrollHeight;
+    outputCount.textContent = fmtInt(exec.output.length) + ' chars';
+  }
+
+  function renderTape(){
+    tapeView.innerHTML = '';
+    const WINDOW = 15;
+    for (let off = -WINDOW; off <= WINDOW; off++){
+      const idx = ((exec.ptr + off) % TAPE_LEN + TAPE_LEN) % TAPE_LEN;
+      const cell = document.createElement('div');
+      cell.className = 'tape-cell' + (off===0 ? ' ptr' : '');
+      cell.innerHTML = `<div class="caretup">▲</div><div class="idx">${idx}</div><div class="val">${exec.tape[idx]}</div>`;
+      tapeView.appendChild(cell);
+    }
+  }
+
+  function stepOnce(){
+    if (exec.pc >= exec.program.length){ exec.finished = true; return false; }
+    const c = exec.program[exec.pc];
+    switch(c){
+      case '>': exec.ptr = (exec.ptr + 1) % TAPE_LEN; break;
+      case '<': exec.ptr = (exec.ptr - 1 + TAPE_LEN) % TAPE_LEN; break;
+      case '+': exec.tape[exec.ptr] = (exec.tape[exec.ptr] + 1) & 0xFF; break;
+      case '-': exec.tape[exec.ptr] = (exec.tape[exec.ptr] - 1) & 0xFF; break;
+      case '.': exec.output.push(exec.tape[exec.ptr]); break;
+      case ',':
+        exec.tape[exec.ptr] = exec.inputPos < exec.inputQueue.length ? (exec.inputQueue[exec.inputPos++] & 0xFF) : 0;
+        break;
+      case '[': if (exec.tape[exec.ptr] === 0) exec.pc = exec.jump.get(exec.pc); break;
+      case ']': if (exec.tape[exec.ptr] !== 0) exec.pc = exec.jump.get(exec.pc); break;
+    }
+    exec.pc++;
+    exec.steps++;
+    if (exec.pc >= exec.program.length) exec.finished = true;
+    return true;
+  }
+
+  function doStep(){
+    if (exec.finished) return;
+    stepOnce();
+    renderOutput();
+    renderTape();
+    execStatus.textContent = `pc=${exec.pc}  ptr=${exec.ptr}  steps=${fmtInt(exec.steps)}` + (exec.finished ? '\nprogram terminated' : '');
+  }
+
+  function stopRun(reason){
+    exec.running = false;
+    btnPause.disabled = true;
+    if (exec.rafHandle) cancelAnimationFrame(exec.rafHandle);
+    renderOutput();
+    if (reason){
+      pauseNoteText.textContent = reason;
+      pauseNote.style.display = 'flex';
+    }
+    execStatus.textContent = (exec.finished ? 'program terminated' : 'paused') + ` — pc=${exec.pc} ptr=${exec.ptr} steps=${fmtInt(exec.steps)}`;
+  }
+
+  function runLoop(){
+    if (!exec.running) return;
+    const chunk = parseInt(speedSlider.value, 10);
+    for (let i = 0; i < chunk; i++){
+      if (exec.finished){ stopRun(null); return; }
+      if (exec.steps >= MAX_STEPS_PER_RUN){ stopRun(`paused after ${fmtInt(MAX_STEPS_PER_RUN)} steps — this may be a long-running or non-terminating program.`); return; }
+      if (exec.output.length >= MAX_OUTPUT_CHARS){ stopRun(`paused after ${fmtInt(MAX_OUTPUT_CHARS)} output characters.`); return; }
+      stepOnce();
+    }
+    renderOutput();
+    renderTape();
+    execStatus.textContent = `running — pc=${exec.pc} ptr=${exec.ptr} steps=${fmtInt(exec.steps)}`;
+    exec.rafHandle = requestAnimationFrame(runLoop);
+  }
+
+  btnRun.addEventListener('click', () => {
+    if (exec.finished) return;
+    exec.running = true;
+    btnPause.disabled = false;
+    pauseNote.style.display = 'none';
+    runLoop();
+  });
+  btnPause.addEventListener('click', () => stopRun(null));
+  btnStep.addEventListener('click', () => { exec.running = false; doStep(); });
+  btnReset.addEventListener('click', () => resetExec(true));
+  btnContinue.addEventListener('click', () => {
+    pauseNote.style.display = 'none';
+    exec.running = true;
+    btnPause.disabled = false;
+    runLoop();
+  });
+  outputModeToggle.addEventListener('click', () => {
+    exec.outputMode = exec.outputMode === 'text' ? 'bytes' : 'text';
+    outputModeToggle.textContent = exec.outputMode === 'text' ? 'show as byte codes' : 'show as text';
+    renderOutput();
+  });
+
+  /* =========================================================
+     INIT
+  ========================================================= */
+  setMode('demo');
+  refreshBFStatus();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SWEAT</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+:root{
+  --void: #0b0b0a;
+  --panel: #19191710;
+  --station: #1b1b19;
+  --station-raised: #252523;
+  --station-groove: #0f0f0e;
+  --hazard: #f0c14b;
+  --hazard-dim: #8a6c28;
+  --hazard-dim2: #55461c;
+  --paper: #ede7d9;
+  --paper-2: #e3ddcc;
+  --ink: #1c1a15;
+  --ink-soft: #55503f;
+  --ledger-red: #7c3232;
+  --err: #c0453f;
+  --ok: #4d7a58;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Inter', -apple-system, sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--void);
+  color:#d8d4c8;
+  font-family:var(--sans);
+  min-height:100vh;
+}
+
+.app{
+  max-width:1180px;
+  margin:0 auto;
+  padding:18px 18px 60px;
+}
+
+/* ---------- topbar ---------- */
+.topbar{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:14px;
+  padding:10px 4px 20px;
+  border-bottom:1px solid #2a2a26;
+  margin-bottom:20px;
+}
+.brand-mark{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:0.16em;
+  color:var(--hazard);
+}
+.brand-sub{
+  display:block;
+  font-family:var(--sans);
+  font-size:11px;
+  letter-spacing:0.04em;
+  color:#7c7869;
+  margin-top:4px;
+}
+.topbar-controls{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.chip-btn{
+  font-family:var(--sans);
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:0.03em;
+  color:#c9c5b8;
+  background:var(--station-raised);
+  border:1px solid #34342f;
+  border-radius:3px;
+  padding:8px 12px;
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.chip-btn:hover{border-color:var(--hazard-dim);color:#efe;}
+.chip-btn:hover{color:var(--hazard);}
+.chip-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.chip-btn.active{background:var(--hazard-dim2);border-color:var(--hazard);color:var(--hazard);}
+
+/* ---------- program drawer ---------- */
+.drawer{
+  background:var(--station);
+  border:1px solid #2c2c28;
+  border-radius:4px;
+  padding:16px;
+  margin-bottom:20px;
+}
+.drawer label{
+  display:block;
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.12em;
+  color:var(--hazard-dim);
+  margin-bottom:8px;
+}
+.drawer textarea{
+  width:100%;
+  min-height:110px;
+  background:var(--station-groove);
+  border:1px solid #2c2c28;
+  border-radius:3px;
+  color:#cfcabb;
+  font-family:var(--mono);
+  font-size:12.5px;
+  line-height:1.6;
+  padding:10px 12px;
+  resize:vertical;
+}
+.drawer-actions{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.drawer-note{
+  font-size:11px;
+  color:#726e60;
+  margin-left:auto;
+}
+
+/* ---------- floor: two columns ---------- */
+.floor{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media (max-width:820px){
+  .floor{grid-template-columns:1fr;}
+}
+
+/* ---------- operator station ---------- */
+.operator-station{
+  background:var(--station);
+  border:1px solid #2c2c28;
+  border-radius:4px;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+}
+.operator-station::before{
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+  background:repeating-linear-gradient(45deg, var(--hazard) 0 10px, #1b1b19 10px 20px);
+  opacity:0.55;
+}
+.station-eyebrow{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.16em;
+  color:var(--hazard-dim);
+  margin-top:10px;
+}
+.station-status{
+  font-family:var(--mono);
+  font-size:13px;
+  color:#89846f;
+  margin-top:6px;
+  margin-bottom:22px;
+  min-height:16px;
+  letter-spacing:0.03em;
+}
+.station-status.live{color:var(--hazard);}
+.station-status.done{color:var(--ok);}
+
+.odometer-row{
+  display:flex;
+  gap:14px;
+  margin-bottom:26px;
+}
+.odometer{
+  background:var(--station-groove);
+  border:1px solid #2c2c28;
+  border-radius:3px;
+  padding:8px 14px;
+  text-align:center;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.odometer-label{
+  font-family:var(--mono);
+  font-size:9px;
+  letter-spacing:0.14em;
+  color:#63604f;
+  margin-bottom:4px;
+}
+.odometer-digits{
+  font-family:var(--mono);
+  font-size:20px;
+  font-weight:700;
+  color:var(--hazard);
+  letter-spacing:0.04em;
+  font-variant-numeric:tabular-nums;
+}
+
+.nand-readout{
+  display:flex;
+  align-items:center;
+  gap:22px;
+  margin-bottom:30px;
+}
+.input-cell{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.input-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.1em;
+  color:#75705e;
+}
+.input-value{
+  width:64px;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--station-groove);
+  border:1px solid #34342f;
+  border-radius:3px;
+  font-family:var(--mono);
+  font-size:30px;
+  font-weight:700;
+  color:#e8e4d6;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,0.55);
+}
+.gate-symbol{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.12em;
+  color:var(--hazard-dim);
+  padding-top:18px;
+}
+
+.press-buttons{
+  display:flex;
+  gap:22px;
+  margin-bottom:22px;
+}
+.press-btn{
+  width:84px;
+  height:84px;
+  border-radius:50%;
+  font-family:var(--mono);
+  font-size:32px;
+  font-weight:700;
+  cursor:pointer;
+  border:2px solid #34342f;
+  background:radial-gradient(circle at 35% 30%, #2d2d29, #17170f 75%);
+  color:#cfcabb;
+  box-shadow:0 4px 0 #0c0c0a, 0 6px 10px rgba(0,0,0,0.5);
+  transition:transform .05s, box-shadow .05s;
+}
+.press-btn:hover{border-color:var(--hazard-dim);}
+.press-btn:active, .press-btn.pressed{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 #0c0c0a, 0 2px 4px rgba(0,0,0,0.5);
+}
+.press-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.press-btn.flash-ok{border-color:var(--ok);box-shadow:0 4px 0 #0c0c0a, 0 0 16px rgba(77,122,88,0.7);}
+.press-btn.flash-err{border-color:var(--err);box-shadow:0 4px 0 #0c0c0a, 0 0 16px rgba(192,69,63,0.7);}
+
+.mistake-tally{
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:#5f5c4d;
+  letter-spacing:0.04em;
+}
+.mistake-tally span{color:#8c8672;}
+
+/* ---------- output station ---------- */
+.output-station{
+  background:var(--paper);
+  border-radius:4px;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  color:var(--ink);
+  min-height:420px;
+}
+.output-header{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.18em;
+  color:var(--ledger-red);
+  padding-bottom:10px;
+  margin-bottom:16px;
+  border-bottom:2px solid var(--ledger-red);
+  display:flex;
+  justify-content:space-between;
+}
+.output-body{
+  font-family:var(--serif);
+  font-size:24px;
+  font-weight:400;
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-break:break-word;
+  flex:1;
+  color:var(--ink);
+}
+.output-empty{
+  font-family:var(--sans);
+  font-size:13px;
+  color:var(--ink-soft);
+  font-style:italic;
+}
+.output-cursor{
+  display:inline-block;
+  width:0.5em;
+  height:1em;
+  background:var(--ledger-red);
+  vertical-align:text-bottom;
+  animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0;}}
+
+/* ---------- about strip ---------- */
+.about-strip{
+  margin-top:20px;
+  padding-top:14px;
+  border-top:1px solid #2a2a26;
+}
+.about-text{
+  font-size:13px;
+  line-height:1.7;
+  color:#a5a08e;
+  max-width:760px;
+  margin-top:12px;
+}
+.about-text p{margin:0 0 10px;}
+.about-text b{color:#d8d4c8;}
+
+/* speed control */
+.speed-wrap{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:#8c8772;
+}
+.speed-wrap input[type=range]{accent-color:var(--hazard);}
+
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+
+:focus-visible{outline:2px solid var(--hazard);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div>
+      <span class="brand-mark">SWEAT</span>
+      <span class="brand-sub">every increment, decrement, and pointer move computed by hand, one NAND gate at a time</span>
+    </div>
+    <div class="topbar-controls">
+      <button class="chip-btn" id="drawerToggle">Program</button>
+      <button class="chip-btn" id="resetBtn">Reset</button>
+      <button class="chip-btn" id="autoBtn">Autopilot: off</button>
+      <div class="speed-wrap" id="speedWrap" style="display:none;">
+        <span>speed</span>
+        <input type="range" id="speedSlider" min="1" max="400" value="60">
+      </div>
+      <button class="chip-btn" id="clockOutBtn">Clock out</button>
+    </div>
+  </div>
+
+  <div class="drawer" id="drawer" hidden>
+    <label>BRAINFUCK SOURCE — this is what the machine runs; +, -, &gt;, &lt; are the operator's</label>
+    <textarea id="sourceInput" spellcheck="false"></textarea>
+    <div class="drawer-actions">
+      <button class="chip-btn" id="loadDefaultBtn">Load default (prime generator)</button>
+      <button class="chip-btn active" id="runBtn">Run program</button>
+      <span class="drawer-note" id="programMeta"></span>
+    </div>
+  </div>
+
+  <main class="floor">
+
+    <section class="operator-station" aria-label="Operator station">
+      <div class="station-eyebrow">OPERATOR STATION</div>
+      <div class="station-status" id="stationStatus">awaiting program</div>
+
+      <div class="odometer-row">
+        <div class="odometer">
+          <div class="odometer-label">GATE</div>
+          <div class="odometer-digits" id="opProgress">— / —</div>
+        </div>
+        <div class="odometer">
+          <div class="odometer-label">TOTAL</div>
+          <div class="odometer-digits" id="totalOps">000000</div>
+        </div>
+      </div>
+
+      <div class="nand-readout">
+        <div class="input-cell">
+          <span class="input-label">A</span>
+          <span class="input-value" id="valA">—</span>
+        </div>
+        <div class="gate-symbol">NAND</div>
+        <div class="input-cell">
+          <span class="input-label">B</span>
+          <span class="input-value" id="valB">—</span>
+        </div>
+      </div>
+
+      <div class="press-buttons">
+        <button class="press-btn" id="btn0" data-val="0" disabled>0</button>
+        <button class="press-btn" id="btn1" data-val="1" disabled>1</button>
+      </div>
+
+      <div class="mistake-tally">mistakes this session: <span id="mistakeCount">0</span></div>
+    </section>
+
+    <section class="output-station" aria-label="Program output">
+      <div class="output-header"><span>OUTPUT</span></div>
+      <div class="output-body" id="outputBody"><span class="output-empty">no output yet.</span></div>
+    </section>
+
+  </main>
+
+  <div class="about-strip">
+    <button class="chip-btn" id="aboutToggle">What is this?</button>
+    <div class="about-text" id="aboutText" hidden>
+      <p><b>Sweat</b> runs a normal Brainfuck program. Loops, branching, and output run as software, instantly, the way they would in any interpreter.</p>
+      <p>But <b>+</b>, <b>-</b>, <b>&gt;</b>, and <b>&lt;</b> don't just happen. Each one is decomposed into a chain of NAND gates &mdash; roughly 40 for an 8-bit increment, 56 for a decrement &mdash; and the operator resolves them one at a time: two bits, A and B, one button press for NAND(A,B). The machine already knows the answer. You compute it anyway.</p>
+      <p>The operator is never told which instruction they're inside of, or what cell or pointer they're touching. The output accumulates on the right, slowly, disconnected from the labor producing it &mdash; the way a factory floor is disconnected from the storefront selling what it made.</p>
+      <p>Wrong button presses aren't corrected. They're accepted as the gate's output and ripple forward into the byte being built, same as they would on a real line.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   NAND-level arithmetic, expressed as generator functions.
+   Every yield is a real request for a human (or autopilot) answer;
+   nothing here "knows" the right answer independent of what
+   gets pressed. A wrong press really does become the gate's output
+   and flows into everything downstream of it.
+   ============================================================ */
+
+function* nandOp(a, b, meta){
+  const pressed = yield {type:'nand', a, b, meta};
+  return pressed & 1;
+}
+
+function* AND(a,b,meta){
+  const n = yield* nandOp(a,b,meta);
+  return yield* nandOp(n,n,meta);
+}
+
+function* XOR(a,b,meta){
+  const n1 = yield* nandOp(a,b,meta);
+  const n2 = yield* nandOp(a,n1,meta);
+  const n3 = yield* nandOp(b,n1,meta);
+  return yield* nandOp(n2,n3,meta);
+}
+
+// half adder: sum = a XOR b, carry = a AND b (n1 shared) -> 5 NANDs
+function* halfAdder(a,b,meta){
+  const n1 = yield* nandOp(a,b,meta);
+  const n2 = yield* nandOp(a,n1,meta);
+  const n3 = yield* nandOp(b,n1,meta);
+  const sum = yield* nandOp(n2,n3,meta);
+  const carry = yield* nandOp(n1,n1,meta);
+  return {sum, carry};
+}
+
+// half subtractor: diff = a XOR b, borrow = AND(NOT a, b) -> 7 NANDs
+function* halfSubtractor(a,b,meta){
+  const n1 = yield* nandOp(a,b,meta);
+  const n2 = yield* nandOp(a,n1,meta);
+  const n3 = yield* nandOp(b,n1,meta);
+  const diff = yield* nandOp(n2,n3,meta);
+  const notA = yield* nandOp(a,a,meta);
+  const n4 = yield* nandOp(notA,b,meta);
+  const borrow = yield* nandOp(n4,n4,meta);
+  return {diff, borrow};
+}
+
+const INC_GATES = 40; // 8 * 5
+const DEC_GATES = 56; // 8 * 7
+
+function* incBits(bits, meta){
+  let carry = 1;
+  const result = [];
+  for(let i=0;i<8;i++){
+    const {sum, carry:c} = yield* halfAdder(bits[i], carry, meta);
+    result.push(sum);
+    carry = c;
+  }
+  return result;
+}
+
+function* decBits(bits, meta){
+  let borrow = 1;
+  const result = [];
+  for(let i=0;i<8;i++){
+    const {diff, borrow:b} = yield* halfSubtractor(bits[i], borrow, meta);
+    result.push(diff);
+    borrow = b;
+  }
+  return result;
+}
+
+function byteToBits(v){
+  const bits = [];
+  for(let i=0;i<8;i++) bits.push((v>>i)&1);
+  return bits;
+}
+function bitsToByte(bits){
+  let v=0;
+  for(let i=0;i<8;i++) v |= (bits[i]&1)<<i;
+  return v & 0xFF;
+}
+
+function buildJumpMap(src){
+  const map = {};
+  const stack = [];
+  for(let i=0;i<src.length;i++){
+    if(src[i]==='[') stack.push(i);
+    else if(src[i]===']'){
+      const open = stack.pop();
+      if(open===undefined) throw new Error('Unmatched ] at position '+i);
+      map[open]=i; map[i]=open;
+    }
+  }
+  if(stack.length) throw new Error('Unmatched [ at position '+stack[stack.length-1]);
+  return map;
+}
+
+/* The interpreter itself, as a generator. Software ops (brackets,
+   output, input) resolve instantly. +, -, >, < each delegate to the
+   NAND-level generators above, so control genuinely pauses there. */
+function* runProgram(source, tapeSize){
+  const tape = new Uint8Array(tapeSize);
+  let ptr = 0;
+  const jumpMap = buildJumpMap(source);
+  let ip = 0;
+  let instrCounter = 0;
+
+  while(ip < source.length){
+    const instr = source[ip];
+
+    if(instr === '+'){
+      instrCounter++;
+      const meta = {instrId: instrCounter, instrTotal: INC_GATES};
+      const bits = byteToBits(tape[ptr]);
+      const result = yield* incBits(bits, meta);
+      tape[ptr] = bitsToByte(result);
+      ip++;
+    } else if(instr === '-'){
+      instrCounter++;
+      const meta = {instrId: instrCounter, instrTotal: DEC_GATES};
+      const bits = byteToBits(tape[ptr]);
+      const result = yield* decBits(bits, meta);
+      tape[ptr] = bitsToByte(result);
+      ip++;
+    } else if(instr === '>'){
+      instrCounter++;
+      const meta = {instrId: instrCounter, instrTotal: INC_GATES};
+      const bits = byteToBits(ptr);
+      const result = yield* incBits(bits, meta);
+      ptr = bitsToByte(result) % tapeSize;
+      ip++;
+    } else if(instr === '<'){
+      instrCounter++;
+      const meta = {instrId: instrCounter, instrTotal: DEC_GATES};
+      const bits = byteToBits(ptr);
+      const result = yield* decBits(bits, meta);
+      ptr = bitsToByte(result) % tapeSize;
+      ip++;
+    } else if(instr === '['){
+      if(tape[ptr]===0) ip = jumpMap[ip]+1; else ip++;
+    } else if(instr === ']'){
+      if(tape[ptr]!==0) ip = jumpMap[ip]+1; else ip++;
+    } else if(instr === '.'){
+      yield {type:'output', char: String.fromCharCode(tape[ptr])};
+      ip++;
+    } else if(instr === ','){
+      // no interactive input in this prototype; cell is left unchanged
+      ip++;
+    } else {
+      ip++; // anything else is a comment
+    }
+  }
+  return {done:true};
+}
+
+/* ============================================================
+   Driver / UI wiring
+   ============================================================ */
+
+const DEFAULT_PROGRAM = "++++++++++++++++++++++++++++++++++++++++++++++++++.----------------------------------------.+++++++++++++++++++++++++++++++++++++++++.><-----------------------------------------.+++++++++++++++++++++++++++++++++++++++++++.-------------------------------------------.><+++++++++++++++++++++++++++++++++++++++++++++.---------------------------------------------.+++++++++++++++++++++++++++++++++++++++.><.---------------------------------------.";
+
+const el = id => document.getElementById(id);
+const sourceInput = el('sourceInput');
+const drawer = el('drawer');
+const drawerToggle = el('drawerToggle');
+const runBtn = el('runBtn');
+const loadDefaultBtn = el('loadDefaultBtn');
+const resetBtn = el('resetBtn');
+const autoBtn = el('autoBtn');
+const clockOutBtn = el('clockOutBtn');
+const speedWrap = el('speedWrap');
+const speedSlider = el('speedSlider');
+const programMeta = el('programMeta');
+
+const stationStatus = el('stationStatus');
+const opProgress = el('opProgress');
+const totalOps = el('totalOps');
+const valA = el('valA');
+const valB = el('valB');
+const btn0 = el('btn0');
+const btn1 = el('btn1');
+const mistakeCount = el('mistakeCount');
+const outputBody = el('outputBody');
+const aboutToggle = el('aboutToggle');
+const aboutText = el('aboutText');
+
+sourceInput.value = DEFAULT_PROGRAM;
+
+let gen = null;
+let currentRequest = null; // {type:'nand', a,b,meta}
+let running = false;
+let done = false;
+let totalCount = 0;
+let mistakes = 0;
+let lastInstrId = null;
+let gateIndexInInstr = 0;
+let outputText = '';
+let autopilot = false;
+let autoTimer = null;
+
+function describeProgram(src){
+  const counts = {plus:0,minus:0,gt:0,lt:0,dot:0,open:0,close:0};
+  for(const c of src){
+    if(c==='+') counts.plus++;
+    else if(c==='-') counts.minus++;
+    else if(c==='>') counts.gt++;
+    else if(c==='<') counts.lt++;
+    else if(c==='.') counts.dot++;
+    else if(c==='[') counts.open++;
+    else if(c===']') counts.close++;
+  }
+  const estGates = counts.plus*INC_GATES + counts.minus*DEC_GATES + counts.gt*INC_GATES + counts.lt*DEC_GATES;
+  return `${src.length} instructions · ${estGates.toLocaleString()} NAND gates if run straight through (loops may add more)`;
+}
+programMeta.textContent = describeProgram(DEFAULT_PROGRAM);
+sourceInput.addEventListener('input', () => {
+  programMeta.textContent = describeProgram(sourceInput.value);
+});
+
+function pad6(n){ return String(n).padStart(6,'0'); }
+
+function renderIdle(){
+  stationStatus.textContent = 'awaiting program';
+  stationStatus.className = 'station-status';
+  opProgress.textContent = '— / —';
+  valA.textContent = '—';
+  valB.textContent = '—';
+  btn0.disabled = true;
+  btn1.disabled = true;
+}
+
+function renderRequest(req){
+  stationStatus.textContent = 'live';
+  stationStatus.className = 'station-status live';
+  valA.textContent = req.a;
+  valB.textContent = req.b;
+  opProgress.textContent = `${gateIndexInInstr} / ${req.meta.instrTotal}`;
+  btn0.disabled = false;
+  btn1.disabled = false;
+}
+
+function renderDone(){
+  stationStatus.textContent = 'run complete — clocked out';
+  stationStatus.className = 'station-status done';
+  btn0.disabled = true;
+  btn1.disabled = true;
+  stopAutopilot();
+}
+
+function renderOutput(){
+  if(outputText.length === 0){
+    outputBody.innerHTML = '<span class="output-empty">no output yet.</span>';
+  } else {
+    outputBody.textContent = outputText;
+    if(!done){
+      const cursor = document.createElement('span');
+      cursor.className = 'output-cursor';
+      outputBody.appendChild(cursor);
+    }
+  }
+}
+
+function flashButton(btn, correct){
+  btn.classList.remove('flash-ok','flash-err');
+  // force reflow so the animation can restart if pressed rapidly
+  void btn.offsetWidth;
+  btn.classList.add(correct ? 'flash-ok' : 'flash-err');
+  setTimeout(()=>btn.classList.remove('flash-ok','flash-err'), 220);
+}
+
+function resetAll(){
+  stopAutopilot();
+  gen = null;
+  currentRequest = null;
+  running = false;
+  done = false;
+  totalCount = 0;
+  mistakes = 0;
+  lastInstrId = null;
+  gateIndexInInstr = 0;
+  outputText = '';
+  totalOps.textContent = pad6(0);
+  mistakeCount.textContent = '0';
+  renderOutput();
+  renderIdle();
+}
+
+function startRun(){
+  let src;
+  try{
+    src = sourceInput.value;
+    buildJumpMap(src); // validate brackets up front, fail loud & early
+  } catch(e){
+    alert('Program error: ' + e.message);
+    return;
+  }
+  resetAll();
+  gen = runProgram(src, 256);
+  running = true;
+  drawer.hidden = true;
+  advance(undefined);
+}
+
+function advance(pressedValue){
+  if(!gen) return;
+  let res = gen.next(pressedValue);
+  while(!res.done && res.value.type !== 'nand'){
+    if(res.value.type === 'output'){
+      outputText += res.value.char;
+      renderOutput();
+    }
+    res = gen.next();
+  }
+  if(res.done){
+    done = true;
+    currentRequest = null;
+    renderDone();
+    return;
+  }
+  currentRequest = res.value;
+  if(currentRequest.meta.instrId !== lastInstrId){
+    lastInstrId = currentRequest.meta.instrId;
+    gateIndexInInstr = 0;
+  }
+  gateIndexInInstr++;
+  renderRequest(currentRequest);
+}
+
+function press(value){
+  if(!currentRequest || done) return;
+  const correctVal = (currentRequest.a & currentRequest.b) ? 0 : 1;
+  const correct = (value === correctVal);
+  if(!correct){
+    mistakes++;
+    mistakeCount.textContent = String(mistakes);
+  }
+  flashButton(value === 0 ? btn0 : btn1, correct);
+  totalCount++;
+  totalOps.textContent = pad6(totalCount);
+  advance(value);
+}
+
+btn0.addEventListener('click', () => press(0));
+btn1.addEventListener('click', () => press(1));
+document.addEventListener('keydown', (e) => {
+  if(document.activeElement && document.activeElement.tagName === 'TEXTAREA') return;
+  if(e.key === '0') press(0);
+  else if(e.key === '1') press(1);
+});
+
+drawerToggle.addEventListener('click', () => {
+  drawer.hidden = !drawer.hidden;
+});
+loadDefaultBtn.addEventListener('click', () => {
+  sourceInput.value = DEFAULT_PROGRAM;
+  programMeta.textContent = describeProgram(DEFAULT_PROGRAM);
+});
+runBtn.addEventListener('click', startRun);
+resetBtn.addEventListener('click', () => { resetAll(); drawer.hidden = false; });
+
+function stopAutopilot(){
+  autopilot = false;
+  autoBtn.textContent = 'Autopilot: off';
+  autoBtn.classList.remove('active');
+  speedWrap.style.display = 'none';
+  if(autoTimer){ clearInterval(autoTimer); autoTimer = null; }
+}
+function startAutopilot(){
+  if(!gen || done) return;
+  autopilot = true;
+  autoBtn.textContent = 'Autopilot: on';
+  autoBtn.classList.add('active');
+  speedWrap.style.display = 'flex';
+  tickAutopilot();
+}
+function tickAutopilot(){
+  if(autoTimer) clearInterval(autoTimer);
+  const rate = Number(speedSlider.value); // presses per second
+  const interval = Math.max(4, Math.round(1000 / rate));
+  autoTimer = setInterval(() => {
+    if(!autopilot || done || !currentRequest){ return; }
+    const correctVal = (currentRequest.a & currentRequest.b) ? 0 : 1;
+    press(correctVal);
+    if(done) stopAutopilot();
+  }, interval);
+}
+autoBtn.addEventListener('click', () => {
+  if(!gen){ alert('Load and run a program first.'); return; }
+  if(autopilot) stopAutopilot(); else startAutopilot();
+});
+speedSlider.addEventListener('input', () => { if(autopilot) tickAutopilot(); });
+
+clockOutBtn.addEventListener('click', () => {
+  if(!gen || done){ return; }
+  stopAutopilot();
+  // resolve everything remaining, correctly, instantly
+  let guard = 0;
+  while(!done && guard < 2_000_000){
+    if(currentRequest){
+      const correctVal = (currentRequest.a & currentRequest.b) ? 0 : 1;
+      totalCount++;
+      advance(correctVal);
+    } else {
+      break;
+    }
+    guard++;
+  }
+  totalOps.textContent = pad6(totalCount);
+  renderOutput();
+});
+
+aboutToggle.addEventListener('click', () => {
+  aboutText.hidden = !aboutText.hidden;
+});
+
+// initial state: program drawer open so the first-time visitor sees what's about to run
+drawer.hidden = false;
+renderIdle();
+renderOutput();
+
+})();
+</script>
+</body>
+</html>
