@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BrainSwitch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#0E1517;
+  --panel:#141D1F;
+  --panel-alt:#182325;
+  --border:#263230;
+  --text:#E9EEEA;
+  --text-muted:#7E938D;
+  --prime:#FF6A46;
+  --prime-soft:rgba(255,106,70,0.14);
+  --normal:#4FC3B0;
+  --normal-soft:rgba(79,195,176,0.14);
+  --cursor:#FFD166;
+  --cursor-soft:rgba(255,209,102,0.16);
+  --error:#FF5D5D;
+  --error-soft:rgba(255,93,93,0.12);
+  --radius:8px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(79,195,176,0.06), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(255,106,70,0.05), transparent 55%),
+    var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+}
+
+::selection{ background:var(--cursor-soft); }
+:focus-visible{ outline:2px solid var(--cursor); outline-offset:2px; }
+
+.app{
+  max-width:1180px;
+  margin:0 auto;
+  padding:28px 20px 60px;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+  min-height:100vh;
+}
+
+/* ---------- Hero ---------- */
+.hero{
+  padding:22px 24px 20px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:linear-gradient(180deg, var(--panel-alt), var(--panel));
+  position:relative;
+  overflow:hidden;
+}
+.hero h1{
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  font-size:clamp(28px,4vw,40px);
+  margin:0;
+  letter-spacing:-0.02em;
+}
+.hero p.tagline{
+  margin:8px 0 0;
+  color:var(--text-muted);
+  font-size:14.5px;
+  max-width:60ch;
+}
+.hero p.tagline code{
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text);
+  background:var(--panel-alt);
+  padding:1px 5px;
+  border-radius:4px;
+  border:1px solid var(--border);
+}
+
+/* ---------- Toolbar ---------- */
+.toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px 16px;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--panel);
+}
+select, button, input[type=text]{
+  font-family:'Inter',sans-serif;
+  font-size:13.5px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:var(--panel-alt);
+  color:var(--text);
+  padding:7px 11px;
+}
+select{ min-width:170px; cursor:pointer; }
+button{
+  cursor:pointer;
+  font-weight:600;
+  transition:border-color .15s, color .15s, background .15s;
+}
+button:hover:not(:disabled){ border-color:var(--text-muted); }
+button:disabled{ opacity:.35; cursor:not-allowed; }
+button.primary{ background:var(--normal-soft); border-color:var(--normal); color:var(--normal); }
+button.primary:hover:not(:disabled){ background:rgba(79,195,176,0.22); }
+button.stop{ background:var(--prime-soft); border-color:var(--prime); color:var(--prime); }
+button.stop:hover:not(:disabled){ background:rgba(255,106,70,0.22); }
+
+.btn-group{ display:flex; gap:8px; }
+
+.speed-control{ display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:13px; }
+.speed-control input[type=range]{ accent-color:var(--normal); width:110px; }
+.speed-control .speed-val{ font-family:'JetBrains Mono',monospace; color:var(--text); min-width:52px; }
+
+.turbo-toggle{ display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:13px; cursor:pointer; user-select:none; }
+.turbo-toggle input{ accent-color:var(--prime); }
+
+.status-pill{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12.5px;
+  padding:5px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  color:var(--text-muted);
+  white-space:nowrap;
+}
+.status-pill.running{ border-color:var(--normal); color:var(--normal); }
+.status-pill.paused{ border-color:var(--cursor); color:var(--cursor); }
+.status-pill.halted{ border-color:var(--text-muted); color:var(--text); }
+.status-pill.error{ border-color:var(--error); color:var(--error); }
+
+/* ---------- Editor ---------- */
+.editor-section h2, .panel h2, .tape-wrap h2{
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  color:var(--text-muted);
+  margin:0 0 10px;
+  font-weight:500;
+}
+.editor-wrap{
+  position:relative;
+  flex:1;
+  min-height:260px;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  background:var(--panel);
+}
+.editor-wrap textarea, .editor-wrap pre.code-view{
+  position:absolute;
+  inset:0;
+  margin:0;
+  padding:14px 16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+  line-height:1.65;
+  white-space:pre-wrap;
+  word-break:break-word;
+  overflow:auto;
+}
+.editor-wrap textarea{
+  width:100%; height:100%;
+  background:transparent;
+  color:var(--text);
+  border:none;
+  resize:none;
+}
+.editor-wrap textarea:focus{ outline:none; box-shadow:inset 0 0 0 2px var(--cursor-soft); }
+.editor-wrap pre.code-view{
+  color:var(--text);
+  pointer-events:none;
+}
+.code-view .cmd{ color:var(--text); }
+.code-view .comment{ color:var(--text-muted); opacity:.5; }
+.code-view .cur{ background:var(--cursor-soft); outline:1px solid var(--cursor); border-radius:2px; }
+.code-view .match{ outline:1px dashed var(--cursor); opacity:.85; border-radius:2px; }
+
+.editor-hint{
+  margin-top:8px;
+  font-size:12.5px;
+  color:var(--text-muted);
+}
+.editor-hint b{ color:var(--text); font-weight:600; }
+
+/* ---------- Main grid: Program (75%) + Input/Output (25%) ---------- */
+.main-grid{
+  display:grid;
+  grid-template-columns:3fr 1fr;
+  grid-template-rows:1fr;
+  gap:18px;
+  align-items:stretch;
+  flex:1;
+  min-height:0;
+}
+.main-grid > .editor-section{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.panel{
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--panel);
+  padding:16px 18px 18px;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+
+/* IO panel */
+.io-panel h2:not(:first-child){ margin-top:16px; }
+.io-panel input[type=text]{ width:100%; }
+.io-meta{ margin-top:6px; font-size:12px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+.output{
+  margin:8px 0 0;
+  min-height:90px;
+  flex:1;
+  overflow:auto;
+  padding:10px 12px;
+  background:var(--panel-alt);
+  border:1px solid var(--border);
+  border-radius:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:13.5px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  color:var(--text);
+}
+.output:empty::before{ content:'(no output yet)'; color:var(--text-muted); }
+
+/* ---------- Tape ---------- */
+.tape-wrap{
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  background:var(--panel);
+  padding:16px 18px 18px;
+}
+.tape{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:4px 4px 10px;
+  scroll-behavior:smooth;
+}
+.cell{
+  flex:none;
+  width:56px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  padding:8px 4px 10px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:var(--panel-alt);
+}
+.cell.ptr{
+  border-color:var(--cursor);
+  box-shadow:0 0 0 1px var(--cursor-soft);
+}
+.cell .idx{ font-size:10px; color:var(--text-muted); font-family:'JetBrains Mono',monospace; }
+.cell .mini-track{
+  width:30px; height:16px; border-radius:8px;
+  background:var(--normal-soft); border:1px solid var(--normal);
+  position:relative;
+}
+.cell.prime .mini-track{ background:var(--prime-soft); border-color:var(--prime); }
+.mini-knob{
+  position:absolute; top:2px; left:2px;
+  width:10px; height:10px; border-radius:50%;
+  background:var(--normal);
+}
+.cell.prime .mini-knob{ left:16px; background:var(--prime); }
+.cell .val{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; }
+.cell.ptr .idx{ color:var(--cursor); font-weight:600; }
+
+/* ---------- Footer meta ---------- */
+.footer-meta{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  font-size:12.5px;
+  color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+  flex-wrap:wrap;
+}
+.error-banner{
+  display:none;
+  padding:10px 14px;
+  border-radius:6px;
+  background:var(--error-soft);
+  border:1px solid var(--error);
+  color:var(--error);
+  font-size:13px;
+  font-family:'Inter',sans-serif;
+}
+.error-banner.show{ display:block; }
+
+/* ---------- Responsive ---------- */
+@media (max-width:760px){
+  .main-grid{ grid-template-columns:1fr; grid-template-rows:auto; flex:none; }
+  .editor-wrap{ flex:none; height:400px; }
+  .status-pill{ margin-left:0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <h1>BrainSwitch</h1>
+    <p class="tagline">Brainfuck, except when a cell holds a prime number, <code>+</code> and <code>-</code> swap meaning. Every arithmetic step means tracking whether the current cell is prime right now.</p>
+  </header>
+
+  <section class="toolbar" aria-label="Controls">
+    <select id="exampleSelect" aria-label="Load example"></select>
+    <div class="btn-group">
+      <button id="btnRun" class="primary">Run</button>
+      <button id="btnStep">Step</button>
+      <button id="btnPause" class="stop" disabled>Pause</button>
+      <button id="btnReset">Reset</button>
+    </div>
+    <label class="speed-control">
+      Speed
+      <input type="range" id="speed" min="0" max="6" value="3">
+      <span class="speed-val" id="speedVal">15/frame</span>
+    </label>
+    <label class="turbo-toggle">
+      <input type="checkbox" id="turbo">
+      Turbo
+    </label>
+    <div class="status-pill" id="statusPill">Idle</div>
+  </section>
+
+  <section class="main-grid">
+    <div class="editor-section">
+      <h2>Program</h2>
+      <div class="editor-wrap">
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+        <pre class="code-view" id="codeView" hidden></pre>
+      </div>
+      <p class="editor-hint">Commands: <b>&gt; &lt; + - . , [ ]</b> — anything else is a comment. Careful: since <b>.</b> and <b>,</b> are commands, avoid them in comment text.</p>
+    </div>
+
+    <div class="panel io-panel">
+      <h2>Input (stdin)</h2>
+      <input type="text" id="stdin" placeholder="bytes consumed left to right by ,">
+      <div class="io-meta">consumed <span id="inPos">0</span> / <span id="inLen">0</span> bytes — unread <b>,</b> past the end reads 0</div>
+      <h2>Output</h2>
+      <pre class="output" id="output"></pre>
+    </div>
+  </section>
+
+  <section class="tape-wrap">
+    <h2>Tape</h2>
+    <div class="tape" id="tape"></div>
+  </section>
+
+  <section class="footer-meta">
+    <div>Steps: <span id="stepCount">0</span></div>
+    <div id="posInfo">Instruction 0 / 0</div>
+  </section>
+
+  <div class="error-banner" id="errorBanner"></div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Prime table ---------------- */
+  const PRIME = new Array(256).fill(true);
+  PRIME[0] = false; PRIME[1] = false;
+  for (let i = 2; i * i < 256; i++) {
+    if (PRIME[i]) for (let j = i * i; j < 256; j += i) PRIME[j] = false;
+  }
+
+  function wrap(v){ return ((v % 256) + 256) % 256; }
+
+  /* ---------------- Parser ---------------- */
+  // Builds the instruction list (skipping comment chars) plus a map back
+  // to the original source index, and a jump table for brackets.
+  function parseProgram(source){
+    const commands = [];
+    const origIdx = [];
+    for (let i = 0; i < source.length; i++) {
+      const ch = source[i];
+      if ('><+-.,[]'.includes(ch)) { commands.push(ch); origIdx.push(i); }
+    }
+    const jump = new Array(commands.length).fill(-1);
+    const stack = [];
+    for (let i = 0; i < commands.length; i++) {
+      if (commands[i] === '[') stack.push(i);
+      else if (commands[i] === ']') {
+        const open = stack.pop();
+        if (open === undefined) throw errAt(source, origIdx[i], "Unmatched ]");
+        jump[open] = i; jump[i] = open;
+      }
+    }
+    if (stack.length) throw errAt(source, origIdx[stack[stack.length-1]], "Unmatched [");
+    return { source, commands, origIdx, jump };
+  }
+
+  function errAt(source, srcIdx, msg){
+    let line = 1, col = 1;
+    for (let i = 0; i < srcIdx; i++) {
+      if (source[i] === '\n') { line++; col = 1; } else col++;
+    }
+    const e = new Error(msg + " (line " + line + ", col " + col + ")");
+    return e;
+  }
+
+  /* ---------------- Interpreter ---------------- */
+  const MAX_STEPS = 5_000_000;
+
+  function createInterpreter(source, input){
+    const parsed = parseProgram(source);
+    return {
+      source: parsed.source,
+      commands: parsed.commands,
+      origIdx: parsed.origIdx,
+      jump: parsed.jump,
+      input: input,
+      inPos: 0,
+      tape: Object.create(null),
+      ptr: 0,
+      ip: 0,
+      steps: 0,
+      halted: parsed.commands.length === 0,
+      output: "",
+      limitHit: false,
+      getCell(i){ const v = this.tape[i]; return v === undefined ? 0 : v; },
+      setCell(i, v){ this.tape[i] = wrap(v); },
+      step(){
+        if (this.halted) return false;
+        const cmd = this.commands[this.ip];
+        const v = this.getCell(this.ptr);
+        const prime = PRIME[v];
+        switch (cmd) {
+          case '>': this.ptr++; break;
+          case '<': this.ptr--; break;
+          case '+': this.setCell(this.ptr, prime ? v - 1 : v + 1); break;
+          case '-': this.setCell(this.ptr, prime ? v + 1 : v - 1); break;
+          case '.': this.output += String.fromCharCode(v); break;
+          case ',':
+            if (this.inPos < this.input.length) {
+              this.setCell(this.ptr, this.input.charCodeAt(this.inPos) & 0xFF);
+              this.inPos++;
+            } else {
+              this.setCell(this.ptr, 0);
+            }
+            break;
+          case '[': if (v === 0) this.ip = this.jump[this.ip]; break;
+          case ']': if (v !== 0) this.ip = this.jump[this.ip]; break;
+        }
+        this.ip++;
+        this.steps++;
+        if (this.ip >= this.commands.length) this.halted = true;
+        if (this.steps >= MAX_STEPS && !this.halted) { this.halted = true; this.limitHit = true; }
+        return true;
+      }
+    };
+  }
+
+  /* ---------------- Examples ---------------- */
+  // NOTE: comment text inside these programs must avoid > < + - . , [ ]
+  // since those 8 characters are live BrainSwitch commands, not just BF-style filler.
+  const EXAMPLES = [
+    {
+      name: "Scratch (empty)",
+      code: "",
+      stdin: ""
+    },
+    {
+      name: "The prime trap",
+      code:
+`Prime trap demo
+Start at cell zero and press plus four times
+Watch it bounce between 1 and 2 forever
+Two is prime so plus keeps flipping back and forth
+Step through it slowly and watch the switch panel
+++++`,
+      stdin: ""
+    },
+    {
+      name: "Reliable count to ten",
+      code:
+`Reliable increment demo
+Naively pressing plus gets stuck bouncing at 2
+This sequence was hand solved to always increase
+by picking plus when the value is not prime
+and picking minus when the value is prime
+since minus increments a prime cell
+Step through and watch the switch flip each time
+Final cell value ends up at ten
+++--+-+-++`,
+      stdin: ""
+    },
+    {
+      name: "Binary strategy (TC-safe)",
+      code:
+`Binary strategy demo
+Neither zero nor one is prime
+so plus and minus behave normally forever
+as long as a cell only ever holds zero or one
+This is the strategy the language relies on
+for full Turing completeness
+Flips a bit up then back down
++-`,
+      stdin: ""
+    },
+    {
+      name: "Echo input",
+      code:
+`Echo demo
+Reads a byte then prints it back
+Repeats until it reads a zero byte
+Type something in the input box above then press Run
+An unread input past the end counts as zero
+so the loop also stops if you run out of input
+,[.,]`,
+      stdin: "Hi!"
+    },
+    {
+      name: "Printing binary counter (unbounded)",
+      code: "+[<<<<<<[-<<<<<<]<[<<<+<+>>>>-]<<<<[>>>>+<<<<-]+>[<->-]<[>>>>+<++--+-+-+++-+-+++-+-+++-+++++-+-+++++-+++-+-+++-+<++--+-+-+++-+-+++-+-+++-+++++-+-+++++-+++-+-+++-<<-]>>>>>+>>>>>>-[+>>>>>>-]+<<<<<<<[<<<<<<]>>>>>>[>[<<<<+<+>>>>>-]<<<<<[>>>>>+<<<<<-]>[>>.<<-]>>>>[<<<<<+>+>>>>-]<<<<[>>>>+<<<<-]+<[>-<-]>[>.<-]>>>>>>>>>]>>++--+-+-++.---+-+-++-<]",
+      stdin: ""
+    }
+  ];
+
+  /* ---------------- DOM refs ---------------- */
+  const codeEl = document.getElementById('code');
+  const codeViewEl = document.getElementById('codeView');
+  const exampleSelect = document.getElementById('exampleSelect');
+  const btnRun = document.getElementById('btnRun');
+  const btnStep = document.getElementById('btnStep');
+  const btnPause = document.getElementById('btnPause');
+  const btnReset = document.getElementById('btnReset');
+  const speedEl = document.getElementById('speed');
+  const speedValEl = document.getElementById('speedVal');
+  const turboEl = document.getElementById('turbo');
+  const statusPill = document.getElementById('statusPill');
+  const stdinEl = document.getElementById('stdin');
+  const inPosEl = document.getElementById('inPos');
+  const inLenEl = document.getElementById('inLen');
+  const outputEl = document.getElementById('output');
+  const tapeEl = document.getElementById('tape');
+  const stepCountEl = document.getElementById('stepCount');
+  const posInfoEl = document.getElementById('posInfo');
+  const errorBanner = document.getElementById('errorBanner');
+
+  const SPEED_STEPS = [1, 2, 5, 15, 60, 300, 1500];
+
+  let interp = null;
+  let running = false;
+  let rafId = null;
+
+  /* ---------------- Examples dropdown ---------------- */
+  EXAMPLES.forEach((ex, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = ex.name;
+    exampleSelect.appendChild(opt);
+  });
+  exampleSelect.addEventListener('change', () => {
+    const ex = EXAMPLES[Number(exampleSelect.value)];
+    hardReset();
+    codeEl.value = ex.code;
+    stdinEl.value = ex.stdin;
+    updateIOMeta();
+  });
+  codeEl.value = EXAMPLES[1].code;
+  stdinEl.value = EXAMPLES[1].stdin;
+  exampleSelect.value = 1;
+
+  /* ---------------- Helpers ---------------- */
+  function escapeHtml(s){
+    return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  }
+
+  function showError(msg){
+    errorBanner.textContent = msg;
+    errorBanner.classList.add('show');
+    statusPill.textContent = 'Error';
+    statusPill.className = 'status-pill error';
+  }
+  function clearError(){
+    errorBanner.textContent = '';
+    errorBanner.classList.remove('show');
+  }
+
+  function updateIOMeta(){
+    inLenEl.textContent = stdinEl.value.length;
+    inPosEl.textContent = interp ? interp.inPos : 0;
+  }
+
+  /* ---------------- Rendering ---------------- */
+  function renderCodeView(){
+    const src = interp.source;
+    let curSrcIdx = -1, matchSrcIdx = -1;
+    if (!interp.halted && interp.ip < interp.commands.length) {
+      curSrcIdx = interp.origIdx[interp.ip];
+      const cmd = interp.commands[interp.ip];
+      if (cmd === '[' || cmd === ']') {
+        const j = interp.jump[interp.ip];
+        matchSrcIdx = interp.origIdx[j];
+      }
+    }
+    let html = '';
+    for (let i = 0; i < src.length; i++) {
+      const ch = src[i];
+      const isCmd = '><+-.,[]'.includes(ch);
+      let cls = isCmd ? 'cmd' : 'comment';
+      if (i === curSrcIdx) cls += ' cur';
+      if (i === matchSrcIdx) cls += ' match';
+      html += '<span class="' + cls + '">' + escapeHtml(ch === '\n' ? '\n' : ch) + '</span>';
+    }
+    codeViewEl.innerHTML = html || '<span class="comment">(empty program)</span>';
+    const curSpan = codeViewEl.querySelector('.cur');
+    if (curSpan && curSpan.scrollIntoView) curSpan.scrollIntoView({ block: 'center', inline: 'center' });
+  }
+
+  function renderTape(){
+    const RADIUS = 11;
+    const ptr = interp ? interp.ptr : 0;
+    let html = '';
+    for (let i = ptr - RADIUS; i <= ptr + RADIUS; i++) {
+      const v = interp ? interp.getCell(i) : 0;
+      const prime = PRIME[v];
+      const isPtr = i === ptr;
+      html += '<div class="cell ' + (prime ? 'prime' : '') + ' ' + (isPtr ? 'ptr' : '') + '">' +
+        '<div class="idx">' + i + '</div>' +
+        '<div class="mini-track"><div class="mini-knob"></div></div>' +
+        '<div class="val">' + v + '</div>' +
+        '</div>';
+    }
+    tapeEl.innerHTML = html;
+    const ptrEl = tapeEl.querySelector('.ptr');
+    if (ptrEl && ptrEl.scrollIntoView) ptrEl.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+
+  function renderOutput(){
+    outputEl.textContent = interp ? interp.output : '';
+    outputEl.scrollTop = outputEl.scrollHeight;
+  }
+
+  function renderStatusAndMeta(){
+    stepCountEl.textContent = interp ? interp.steps : 0;
+    const total = interp ? interp.commands.length : 0;
+    const ip = interp ? Math.min(interp.ip, total) : 0;
+    posInfoEl.textContent = 'Instruction ' + ip + ' / ' + total;
+
+    if (!interp) {
+      statusPill.textContent = 'Idle';
+      statusPill.className = 'status-pill';
+    } else if (interp.limitHit) {
+      statusPill.textContent = 'Halted (step limit)';
+      statusPill.className = 'status-pill error';
+    } else if (interp.halted) {
+      statusPill.textContent = 'Halted';
+      statusPill.className = 'status-pill halted';
+    } else if (running) {
+      statusPill.textContent = 'Running';
+      statusPill.className = 'status-pill running';
+    } else {
+      statusPill.textContent = 'Paused';
+      statusPill.className = 'status-pill paused';
+    }
+    updateIOMeta();
+  }
+
+  function updateButtons(){
+    const started = interp !== null;
+    const halted = interp && interp.halted;
+    btnRun.disabled = halted || running;
+    btnStep.disabled = halted || running;
+    btnPause.disabled = !running;
+    btnReset.disabled = !started;
+    codeEl.readOnly = started;
+    stdinEl.disabled = started;
+    exampleSelect.disabled = running;
+  }
+
+  function updateAll(){
+    if (interp) renderCodeView();
+    renderTape();
+    renderOutput();
+    renderStatusAndMeta();
+    updateButtons();
+  }
+
+  /* ---------------- Speed label ---------------- */
+  function updateSpeedLabel(){
+    speedValEl.textContent = SPEED_STEPS[Number(speedEl.value)] + '/frame';
+  }
+  speedEl.addEventListener('input', updateSpeedLabel);
+  updateSpeedLabel();
+
+  /* ---------------- Execution control ---------------- */
+  function ensureStarted(){
+    if (interp) return true;
+    try {
+      interp = createInterpreter(codeEl.value, stdinEl.value);
+    } catch (e) {
+      showError(e.message);
+      return false;
+    }
+    clearError();
+    codeViewEl.hidden = false;
+    codeEl.hidden = true;
+    return true;
+  }
+
+  function doStep(){
+    if (!ensureStarted()) return;
+    if (interp.halted) return;
+    interp.step();
+    updateAll();
+  }
+
+  function runLoop(){
+    if (!interp || interp.halted) { stopRunning(); updateAll(); return; }
+    const batch = turboEl.checked ? 100000 : SPEED_STEPS[Number(speedEl.value)];
+    let executed = 0;
+    while (executed < batch && !interp.halted) {
+      interp.step();
+      executed++;
+    }
+    updateAll();
+    if (!interp.halted) {
+      rafId = requestAnimationFrame(runLoop);
+    } else {
+      stopRunning();
+      if (interp.limitHit) {
+        showError('Step limit reached (' + MAX_STEPS.toLocaleString() + ') — this looks like it may be an infinite loop, so execution was halted for safety.');
+      }
+    }
+  }
+
+  function startRunning(){
+    if (!ensureStarted()) return;
+    if (interp.halted) return;
+    running = true;
+    updateButtons();
+    statusPill.textContent = 'Running';
+    statusPill.className = 'status-pill running';
+    rafId = requestAnimationFrame(runLoop);
+  }
+
+  function stopRunning(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    rafId = null;
+    updateButtons();
+  }
+
+  function hardReset(){
+    stopRunning();
+    interp = null;
+    clearError();
+    codeEl.hidden = false;
+    codeViewEl.hidden = true;
+    codeEl.readOnly = false;
+    codeViewEl.innerHTML = '';
+    updateAll();
+  }
+
+  /* ---------------- Wire up buttons ---------------- */
+  btnRun.addEventListener('click', startRunning);
+  btnStep.addEventListener('click', doStep);
+  btnPause.addEventListener('click', stopRunning);
+  btnReset.addEventListener('click', hardReset);
+  stdinEl.addEventListener('input', updateIOMeta);
+
+  /* ---------------- Init ---------------- */
+  updateIOMeta();
+  updateAll();
+
+})();
+</script>
+</body>
+</html>
