@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrainFreeze — a 2D esolang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a1220;
+    --bg-panel: #101b2e;
+    --bg-panel-2: #0c1626;
+    --bg-inset: #081120;
+    --border: #223449;
+    --border-soft: #182838;
+    --ice: #7dd8f0;
+    --ice-bright: #c7f2ff;
+    --ice-dim: #4d7a92;
+    --ice-glow: rgba(125, 216, 240, 0.35);
+    --deepblue: #2a4a6e;
+    --warn: #ff9466;
+    --warn-glow: rgba(255, 148, 102, 0.35);
+    --text: #dbe9f2;
+    --text-dim: #7891a8;
+    --text-faint: #4a5f74;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', sans-serif;
+    --body-font: 'Inter', sans-serif;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body-font);
+  }
+
+  body {
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(125,216,240,0.08), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(42,74,110,0.18), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  a { color: var(--ice); }
+
+  ::selection { background: var(--ice-glow); color: var(--ice-bright); }
+
+  :focus-visible {
+    outline: 2px solid var(--ice);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  header.hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 22px;
+    margin-bottom: 24px;
+  }
+
+  .hero-title-block { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+
+  h1.title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 34px;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--ice-bright);
+    text-shadow: 0 0 22px rgba(125,216,240,0.28);
+  }
+
+  h1.title .cold { color: var(--text-dim); font-weight: 500; text-shadow: none; }
+
+  p.tagline {
+    margin: 6px 0 0;
+    color: var(--text-dim);
+    font-size: 14.5px;
+    max-width: 46ch;
+    line-height: 1.5;
+  }
+
+  .glyph {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text-faint);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .tab-btn {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--ice-dim); }
+  .tab-btn.active {
+    background: var(--ice);
+    color: #04141f;
+    border-color: var(--ice);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  section.card {
+    background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+
+  .card-label {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ice-dim);
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .examples { display: flex; gap: 8px; flex-wrap: wrap; }
+  .example-btn {
+    font-family: var(--body-font);
+    font-size: 12.5px;
+    font-weight: 500;
+    background: var(--bg-inset);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .example-btn:hover { color: var(--ice-bright); border-color: var(--ice-dim); }
+
+  .subtabs {
+    display: inline-flex;
+    gap: 4px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    margin-bottom: 16px;
+  }
+  .subtab-btn {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    padding: 7px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .15s ease, background-color .15s ease;
+  }
+  .subtab-btn:hover { color: var(--text); }
+  .subtab-btn.active { background: var(--ice-dim); color: var(--ice-bright); }
+
+  .interp-subpanel { display: none; }
+  .interp-subpanel.active { display: block; }
+
+  textarea#sourceEditor, textarea#bfInput, textarea#transpileOutput {
+    width: 100%;
+    background: var(--bg-inset);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 12px 14px;
+    resize: vertical;
+    white-space: pre;
+    tab-size: 2;
+  }
+  textarea#sourceEditor { height: 380px; }
+  textarea#bfInput { height: 120px; }
+  textarea#transpileOutput { height: 200px; color: var(--text-dim); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+
+  button.btn {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    background: var(--bg-inset);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease, color .15s ease, opacity .15s ease;
+  }
+  button.btn:hover:not(:disabled) { border-color: var(--ice); color: var(--ice-bright); }
+  button.btn.primary { background: var(--ice); color: #04141f; border-color: var(--ice); }
+  button.btn.primary:hover:not(:disabled) { background: var(--ice-bright); color: #04141f; }
+  button.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .grid-view-wrap {
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    height: 220px;
+    overflow: auto;
+    padding: 10px;
+  }
+  .grid-view-wrap-run { height: 440px; }
+
+  .grid-row { display: flex; }
+
+  .cell {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 19px;
+    line-height: 19px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    border-radius: 3px;
+    transition: background-color .22s ease, color .22s ease, opacity .22s ease, box-shadow .22s ease;
+  }
+  .cell.void { color: rgba(125,216,240,0.13); }
+  .cell.inst { color: var(--text); background: rgba(255,255,255,0.025); }
+  .cell.visited { background: rgba(125,216,240,0.16); color: var(--ice-dim); }
+  .cell.pc {
+    background: var(--ice);
+    color: #04141f;
+    font-weight: 700;
+    box-shadow: 0 0 9px 1px var(--ice-glow), 0 0 0 1px var(--ice-bright) inset;
+  }
+  .cell.halt {
+    background: var(--ice-bright);
+    color: #04141f;
+    font-weight: 700;
+    box-shadow: 0 0 14px 3px var(--ice-glow);
+  }
+  .cell.errorcell {
+    background: var(--warn);
+    color: #2a0f04;
+    font-weight: 700;
+    box-shadow: 0 0 14px 3px var(--warn-glow);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell { transition: none; }
+    * { scroll-behavior: auto !important; }
+  }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .speed-control { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-dim); }
+  input[type="range"] { accent-color: var(--ice); width: 120px; }
+
+  .status-line {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+  .status-line .error-msg {
+    display: none;
+    margin-top: 6px;
+    color: var(--warn);
+    background: rgba(255,148,102,0.08);
+    border: 1px solid rgba(255,148,102,0.3);
+    padding: 8px 10px;
+    border-radius: 6px;
+  }
+
+  .memory-strip {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+  }
+  .mem-cell {
+    flex: 0 0 auto;
+    width: 44px;
+    text-align: center;
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 0;
+    font-family: var(--mono);
+  }
+  .mem-cell.active { border-color: var(--ice); box-shadow: 0 0 8px var(--ice-glow); }
+  .mem-idx { font-size: 10px; color: var(--text-faint); }
+  .mem-val { font-size: 14px; color: var(--text); margin-top: 2px; }
+  .mem-cell.active .mem-val { color: var(--ice-bright); font-weight: 700; }
+  .mem-cell.odd .mem-val { color: var(--text-faint); }
+
+  pre#outputView {
+    background: var(--bg-inset);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-height: 60px;
+    max-height: 160px;
+    overflow: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ice-bright);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+
+  details.help { margin-top: 4px; }
+  details.help summary {
+    cursor: pointer;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ice-dim);
+    padding: 4px 0;
+  }
+  details.help .help-body {
+    margin-top: 10px;
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+  details.help table { border-collapse: collapse; margin: 10px 0; width: 100%; }
+  details.help td { padding: 5px 10px 5px 0; vertical-align: top; border-bottom: 1px solid var(--border-soft, var(--border)); }
+  details.help td:first-child { font-family: var(--mono); color: var(--ice); white-space: nowrap; }
+
+  .transpile-status { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; font-family: var(--mono); }
+  .transpile-status.error { color: var(--warn); }
+  .transpile-status.ok { color: var(--ice); }
+
+  footer {
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 12px;
+    margin-top: 30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-title-block">
+      <div>
+        <h1 class="title">BRAIN<span class="cold">FREEZE</span></h1>
+        <p class="tagline">A two-dimensional esolang: instructions are carved into a grid, and the shape of the path — not a jump table — decides where control flow goes.</p>
+      </div>
+    </div>
+    <div class="glyph">*  no-op
++  incr → move E
+-  decr → move W
+!  branch: 0→S, else→E
+.  output cell</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="interpreter">Interpreter</button>
+    <button class="tab-btn" data-tab="transpiler">BF → BrainFreeze</button>
+  </nav>
+
+  <!-- ============ INTERPRETER PANEL ============ -->
+  <div class="panel active" id="interpreter-panel">
+
+    <div class="subtabs">
+      <button class="subtab-btn active" data-subtab="edit">Edit</button>
+      <button class="subtab-btn" data-subtab="run">Run</button>
+    </div>
+
+    <!-- ---- Edit sub-panel ---- -->
+    <div class="interp-subpanel active" id="edit-subpanel">
+      <section class="card">
+        <p class="card-label">
+          <span>Program</span>
+          <span class="examples">
+            <button class="example-btn" id="ex-straight">Straight line</button>
+            <button class="example-btn" id="ex-loop">Simple loop</button>
+            <button class="example-btn" id="ex-hello">Hello World (transpiled)</button>
+          </span>
+        </p>
+        <textarea id="sourceEditor" spellcheck="false" wrap="off"></textarea>
+        <div class="btn-row">
+          <button class="btn primary" id="loadBtn">Load &amp; Run →</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <details class="help">
+          <summary>Language reference</summary>
+          <div class="help-body">
+            <table>
+              <tr><td>*</td><td>No-op.</td></tr>
+              <tr><td>+</td><td>Increment memory[dp], then move dp right (odd/scratch convention: pairs with a following <code>-</code> to net a clean BF-style <code>+</code>).</td></tr>
+              <tr><td>-</td><td>Decrement memory[dp], then move dp left.</td></tr>
+              <tr><td>!</td><td>DECISION. If memory[dp] == 0, the PC is forced South; otherwise it's forced East — regardless of which neighbouring cells exist.</td></tr>
+              <tr><td>.</td><td>Output memory[dp] as an ASCII byte.</td></tr>
+            </table>
+            <p>The PC starts on the first non-blank character scanning top-to-bottom, left-to-right, and always steps to whichever orthogonal neighbour has a character — excluding the cell it just came from. A non-DECISION cell with more than one such neighbour is an <strong>ambiguous path</strong> error; a cell with none halts the program. Memory is a large wrapping byte tape, Brainfuck-style. There's no input instruction — BrainFreeze programs are purely generative.</p>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <!-- ---- Run sub-panel ---- -->
+    <div class="interp-subpanel" id="run-subpanel">
+      <section class="card">
+        <p class="card-label">
+          <span>Visualizer</span>
+          <button class="example-btn" id="backToEditBtn">← Edit source</button>
+        </p>
+        <div class="grid-view-wrap grid-view-wrap-run"><div id="gridView"></div></div>
+
+        <div class="controls-row">
+          <button class="btn" id="resetBtn">Reset ↻</button>
+          <button class="btn" id="stepBtn">Step</button>
+          <button class="btn" id="runBtn">Run</button>
+          <button class="btn" id="runEndBtn">Run to end</button>
+          <div class="speed-control">
+            <span>steps / tick</span>
+            <input type="range" id="speedSlider" min="1" max="200" value="4">
+            <span id="speedLabel">4</span>
+          </div>
+        </div>
+
+        <div class="status-line" id="statusEl">No program loaded.</div>
+        <div class="status-line error-msg" id="errorEl"></div>
+      </section>
+
+      <section class="card">
+        <p class="card-label">Memory tape <span style="font-weight:400; text-transform:none; letter-spacing:0; color:var(--text-faint);">— centred on the data pointer</span></p>
+        <div class="memory-strip" id="memoryView"></div>
+      </section>
+
+      <section class="card">
+        <p class="card-label">Output</p>
+        <pre id="outputView"></pre>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ TRANSPILER PANEL ============ -->
+  <div class="panel" id="transpiler-panel">
+    <section class="card">
+      <p class="card-label">Brainfuck source</p>
+      <textarea id="bfInput" spellcheck="false" wrap="off" placeholder="++++++++[&gt;++++++++&lt;-]&gt;+."></textarea>
+      <div class="btn-row">
+        <button class="btn primary" id="transpileBtn">Transpile →</button>
+      </div>
+      <div class="transpile-status" id="transpileStatus"></div>
+    </section>
+
+    <section class="card">
+      <p class="card-label">BrainFreeze output</p>
+      <textarea id="transpileOutput" spellcheck="false" wrap="off" readonly></textarea>
+      <div class="btn-row">
+        <button class="btn primary" id="loadTranspiledBtn" disabled>Load into Interpreter →</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <p class="card-label">How the layout works</p>
+      <div class="help-body" style="font-size:13.5px; color:var(--text-dim); line-height:1.65;">
+        <p>Each BF token expands to BrainFreeze instructions: <code>+</code>→<code>+-</code>, <code>-</code>→<code>-+</code>, <code>&gt;</code>→<code>-+++</code>, <code>&lt;</code>→<code>+---</code>, <code>.</code>→<code>.</code>, <code>[</code>→<code>!</code>. A loop's body runs East of its <code>!</code> and curves back around to re-enter from the North; the exit path runs South. Every loop routes its body and return path through freshly-allocated rows and columns, so unrelated parts of the program never become accidentally adjacent. Generated grids are larger than a hand-optimised BrainFreeze program would be — correctness took priority over compactness.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer>BrainFreeze — a spatial esolang. No input instruction; purely generative.</footer>
+</div>
+
+<script>
+// =====================================================================
+// ENGINE — BrainFreeze interpreter + Brainfuck→BrainFreeze transpiler.
+// (Validated separately against a reference BF interpreter before
+// being embedded here; see project notes.)
+// =====================================================================
+
+const DIRS = {
+  N: { dr: -1, dc: 0 },
+  S: { dr: 1, dc: 0 },
+  E: { dr: 0, dc: 1 },
+  W: { dr: 0, dc: -1 },
+};
+
+class BrainFreeze {
+  constructor(source, tapeSize = 30000) {
+    this.grid = source.split('\n').map((line) => Array.from(line));
+    this.rows = this.grid.length;
+    this.tape = new Uint8Array(tapeSize);
+    this.dp = 0;
+    this.output = '';
+    this.halted = false;
+    this.error = null;
+    this.steps = 0;
+    this.prev = null;
+    this.visited = new Set();
+    this.pc = this._findStart();
+    if (!this.pc) {
+      this.halted = true;
+      this.error = null;
+    }
+  }
+
+  _isChar(row, col) {
+    if (row < 0 || row >= this.rows) return false;
+    const line = this.grid[row];
+    if (col < 0 || col >= line.length) return false;
+    const ch = line[col];
+    return ch !== ' ' && ch !== '\t' && ch !== undefined;
+  }
+
+  charAt(row, col) {
+    return this._isChar(row, col) ? this.grid[row][col] : null;
+  }
+
+  _findStart() {
+    for (let r = 0; r < this.rows; r++) {
+      const line = this.grid[r];
+      for (let c = 0; c < line.length; c++) {
+        if (this._isChar(r, c)) return { row: r, col: c };
+      }
+    }
+    return null;
+  }
+
+  _neighbors(row, col, exclude) {
+    const result = [];
+    for (const name of ['N', 'S', 'E', 'W']) {
+      const d = DIRS[name];
+      const nr = row + d.dr;
+      const nc = col + d.dc;
+      if (exclude && exclude.row === nr && exclude.col === nc) continue;
+      if (this._isChar(nr, nc)) result.push({ row: nr, col: nc, dir: name });
+    }
+    return result;
+  }
+
+  step() {
+    if (this.halted) return false;
+    const { row, col } = this.pc;
+    const ch = this.charAt(row, col);
+    let forcedDir = null;
+
+    switch (ch) {
+      case '*':
+        break;
+      case '+':
+        this.tape[this.dp] = (this.tape[this.dp] + 1) & 0xff;
+        this.dp = (this.dp + 1) % this.tape.length;
+        break;
+      case '-':
+        this.tape[this.dp] = (this.tape[this.dp] + 0xff) & 0xff;
+        this.dp = (this.dp - 1 + this.tape.length) % this.tape.length;
+        break;
+      case '!':
+        forcedDir = this.tape[this.dp] === 0 ? 'S' : 'E';
+        break;
+      case '.':
+        this.output += String.fromCharCode(this.tape[this.dp]);
+        break;
+      default:
+        this.error = `Unknown instruction '${ch}' at row ${row}, col ${col}`;
+        this.halted = true;
+        return false;
+    }
+
+    this.visited.add(`${row},${col}`);
+    this.steps++;
+
+    let next = null;
+    if (forcedDir) {
+      const d = DIRS[forcedDir];
+      const nr = row + d.dr;
+      const nc = col + d.dc;
+      if (this._isChar(nr, nc)) next = { row: nr, col: nc };
+    } else {
+      const avail = this._neighbors(row, col, this.prev);
+      if (avail.length > 1) {
+        this.error = `Ambiguous path: ${avail.length} available neighbours (${avail
+          .map((n) => n.dir)
+          .join(', ')}) at row ${row}, col ${col}`;
+        this.halted = true;
+        return false;
+      }
+      if (avail.length === 1) next = avail[0];
+    }
+
+    if (next) {
+      this.prev = { row, col };
+      this.pc = next;
+    } else {
+      this.halted = true;
+    }
+    return !this.halted;
+  }
+
+  run(maxSteps = 2_000_000) {
+    let n = 0;
+    while (!this.halted && n < maxSteps) {
+      this.step();
+      n++;
+    }
+    if (!this.halted) {
+      this.error = `Exceeded max steps (${maxSteps}) — possible infinite loop`;
+    }
+    return this.output;
+  }
+}
+
+// ---------- BF parsing ----------
+
+function parseBF(bfSource) {
+  const tokens = Array.from(bfSource).filter((c) => '+-<>.[]'.includes(c));
+  let pos = 0;
+
+  function parseSeq() {
+    const items = [];
+    let runBuf = '';
+    const flush = () => {
+      if (runBuf) {
+        items.push({ type: 'run', tokens: runBuf });
+        runBuf = '';
+      }
+    };
+    while (pos < tokens.length && tokens[pos] !== ']') {
+      const t = tokens[pos];
+      if (t === '[') {
+        flush();
+        pos++;
+        const body = parseSeq();
+        if (tokens[pos] !== ']') throw new Error('Unmatched [ in source');
+        pos++;
+        items.push({ type: 'loop', body });
+      } else {
+        runBuf += t;
+        pos++;
+      }
+    }
+    flush();
+    return items;
+  }
+
+  const seq = parseSeq();
+  if (pos < tokens.length) throw new Error('Unmatched ] in source');
+  return seq;
+}
+
+function expandToken(t) {
+  switch (t) {
+    case '+': return '+-';
+    case '-': return '-+';
+    case '>': return '-+++';
+    case '<': return '+---';
+    case '.': return '.';
+    default: throw new Error(`Unexpected token '${t}'`);
+  }
+}
+
+function expandRun(tokens) {
+  let out = '';
+  for (const t of tokens) out += expandToken(t);
+  return out;
+}
+
+// ---------- Spatial layout ----------
+
+class Layouter {
+  constructor() {
+    this.cells = new Map();
+    this.nextFreeRow = 2;
+    this.nextFreeCol = 2;
+    this.maxRowSeen = -1;
+    this.maxColSeen = -1;
+  }
+
+  set(r, c, ch) {
+    const k = `${r},${c}`;
+    if (this.cells.has(k)) {
+      throw new Error(
+        `Layout collision at (${r},${c}): tried to place '${ch}', already holds '${this.cells.get(k)}'`
+      );
+    }
+    this.cells.set(k, ch);
+    if (r > this.maxRowSeen) this.maxRowSeen = r;
+    if (c > this.maxColSeen) this.maxColSeen = c;
+  }
+
+  grabRow(margin = 8) {
+    const r = Math.max(this.nextFreeRow, this.maxRowSeen + 3);
+    this.nextFreeRow = r + margin;
+    return r;
+  }
+
+  grabCol(margin = 8) {
+    const c = Math.max(this.nextFreeCol, this.maxColSeen + 2);
+    this.nextFreeCol = c + margin;
+    return c;
+  }
+
+  placeSequence(items, row, col) {
+    let curRow = row;
+    let curCol = col;
+    let placed = false;
+
+    for (const item of items) {
+      if (item.type === 'run') {
+        const str = expandRun(item.tokens);
+        if (!str) continue;
+        const startCol = placed ? curCol + 1 : curCol;
+        for (let i = 0; i < str.length; i++) this.set(curRow, startCol + i, str[i]);
+        curCol = startCol + str.length - 1;
+        placed = true;
+      } else {
+        const bangCol = placed ? curCol + 1 : curCol;
+        const bangRow = curRow;
+        const cont = this.placeLoop(item.body, bangRow, bangCol);
+        curRow = cont.row;
+        curCol = cont.col;
+        placed = true;
+      }
+    }
+    return { row: curRow, col: curCol };
+  }
+
+  placeLoop(bodyItems, bangRow, bangCol) {
+    this.set(bangRow, bangCol, '!');
+    this.set(bangRow + 1, bangCol, '*');
+
+    const bodyShaftCol = this.grabCol();
+    for (let c = bangCol + 1; c <= bodyShaftCol; c++) this.set(bangRow, c, '*');
+    const bodyRow = this.grabRow();
+    for (let r = bangRow + 1; r <= bodyRow; r++) this.set(r, bodyShaftCol, '*');
+
+    let bodyExit;
+    if (bodyItems.length === 0) {
+      this.set(bodyRow, bodyShaftCol + 1, '*');
+      bodyExit = { row: bodyRow, col: bodyShaftCol + 1 };
+    } else {
+      bodyExit = this.placeSequence(bodyItems, bodyRow, bodyShaftCol + 1);
+    }
+
+    const retShaftCol = this.grabCol();
+    for (let c = bodyExit.col + 1; c <= retShaftCol; c++) this.set(bodyExit.row, c, '*');
+    for (let r = bodyExit.row - 1; r >= bangRow - 2; r--) this.set(r, retShaftCol, '*');
+    for (let c = retShaftCol - 1; c >= bangCol; c--) this.set(bangRow - 2, c, '*');
+    this.set(bangRow - 1, bangCol, '*');
+
+    const contRow = this.grabRow();
+    for (let r = bangRow + 2; r <= contRow; r++) this.set(r, bangCol, '*');
+    return { row: contRow, col: bangCol };
+  }
+}
+
+function layoutToGridString(cells) {
+  if (cells.size === 0) return '*';
+  let minRow = Infinity, minCol = Infinity, maxRow = -Infinity, maxCol = -Infinity;
+  const parsed = [];
+  for (const [k, ch] of cells) {
+    const [r, c] = k.split(',').map(Number);
+    parsed.push([r, c, ch]);
+    if (r < minRow) minRow = r;
+    if (c < minCol) minCol = c;
+    if (r > maxRow) maxRow = r;
+    if (c > maxCol) maxCol = c;
+  }
+  const rowOffset = -minRow;
+  const colOffset = -minCol;
+  maxRow += rowOffset;
+  maxCol += colOffset;
+  const grid = Array.from({ length: maxRow + 1 }, () => Array(maxCol + 1).fill(' '));
+  for (const [r, c, ch] of parsed) grid[r + rowOffset][c + colOffset] = ch;
+  return grid.map((row) => row.join('').replace(/\s+$/g, '')).join('\n');
+}
+
+function transpile(bfSource) {
+  const tree = parseBF(bfSource);
+  const layouter = new Layouter();
+  layouter.set(0, 0, '*');
+  layouter.set(1, 0, '*');
+  layouter.set(2, 0, '*');
+  layouter.set(2, 1, '*');
+  if (tree.length > 0) {
+    layouter.placeSequence(tree, 2, 2);
+  }
+  return layoutToGridString(layouter.cells);
+}
+
+// =====================================================================
+// UI
+// =====================================================================
+
+const sourceEditor = document.getElementById('sourceEditor');
+const gridView = document.getElementById('gridView');
+const loadBtn = document.getElementById('loadBtn');
+const stepBtn = document.getElementById('stepBtn');
+const resetBtn = document.getElementById('resetBtn');
+const runBtn = document.getElementById('runBtn');
+const runEndBtn = document.getElementById('runEndBtn');
+const speedSlider = document.getElementById('speedSlider');
+const speedLabel = document.getElementById('speedLabel');
+const statusEl = document.getElementById('statusEl');
+const errorEl = document.getElementById('errorEl');
+const memoryView = document.getElementById('memoryView');
+const outputView = document.getElementById('outputView');
+
+const bfInput = document.getElementById('bfInput');
+const transpileBtn = document.getElementById('transpileBtn');
+const transpileStatus = document.getElementById('transpileStatus');
+const transpileOutput = document.getElementById('transpileOutput');
+const loadTranspiledBtn = document.getElementById('loadTranspiledBtn');
+
+let interp = null;
+let cellMap = new Map();
+let hotTrail = [];
+const HOT_TRAIL_LEN = 7;
+let running = false;
+let runTimer = null;
+
+function reducedMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function buildGrid(sourceText) {
+  const rows = sourceText.split('\n');
+  const maxCols = Math.max(1, ...rows.map((r) => r.length));
+  gridView.innerHTML = '';
+  cellMap = new Map();
+  const frag = document.createDocumentFragment();
+  for (let r = 0; r < rows.length; r++) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'grid-row';
+    for (let c = 0; c < maxCols; c++) {
+      const ch = rows[r][c];
+      const isVoid = ch === undefined || ch === ' ' || ch === '\t';
+      const cellEl = document.createElement('span');
+      cellEl.className = 'cell ' + (isVoid ? 'void' : 'inst');
+      cellEl.textContent = isVoid ? '\u00B7' : ch;
+      rowEl.appendChild(cellEl);
+      cellMap.set(`${r},${c}`, cellEl);
+    }
+    frag.appendChild(rowEl);
+  }
+  gridView.appendChild(frag);
+}
+
+function resetVisualState() {
+  cellMap.forEach((el) => {
+    el.classList.remove('pc', 'visited', 'halt', 'errorcell');
+    el.style.opacity = '';
+  });
+  hotTrail = [];
+}
+
+function markStep(prevCell) {
+  if (prevCell) {
+    const key = `${prevCell.row},${prevCell.col}`;
+    const el = cellMap.get(key);
+    if (el) el.classList.remove('pc');
+    hotTrail.unshift(key);
+    if (hotTrail.length > HOT_TRAIL_LEN) {
+      const aged = hotTrail.pop();
+      const agedEl = cellMap.get(aged);
+      if (agedEl) { agedEl.classList.add('visited'); agedEl.style.opacity = ''; }
+    }
+    hotTrail.forEach((k, i) => {
+      const e = cellMap.get(k);
+      if (e) {
+        e.classList.add('visited');
+        e.style.opacity = Math.max(0.22, 0.92 - i * (0.7 / HOT_TRAIL_LEN)).toFixed(2);
+      }
+    });
+  }
+
+  if (interp && !interp.halted && interp.pc) {
+    const key = `${interp.pc.row},${interp.pc.col}`;
+    const el = cellMap.get(key);
+    if (el) {
+      el.classList.remove('visited');
+      el.style.opacity = '';
+      el.classList.add('pc');
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    }
+  } else if (interp && interp.halted && interp.pc) {
+    const key = `${interp.pc.row},${interp.pc.col}`;
+    const el = cellMap.get(key);
+    if (el) {
+      el.classList.remove('pc', 'visited');
+      el.style.opacity = '';
+      el.classList.add(interp.error ? 'errorcell' : 'halt');
+    }
+  }
+}
+
+function updateStatus() {
+  if (!interp) { statusEl.textContent = 'No program loaded.'; errorEl.style.display = 'none'; return; }
+  const bits = [
+    `steps: ${interp.steps}`,
+    `dp: ${interp.dp}`,
+    `cell[dp]: ${interp.tape[interp.dp]}`,
+    interp.halted ? (interp.error ? 'halted — error' : 'halted') : 'running',
+  ];
+  statusEl.textContent = bits.join('   \u00B7   ');
+  if (interp.error) {
+    errorEl.textContent = interp.error;
+    errorEl.style.display = 'block';
+  } else {
+    errorEl.style.display = 'none';
+  }
+}
+
+function updateMemoryView() {
+  memoryView.innerHTML = '';
+  if (!interp) return;
+  const span = 10;
+  const len = interp.tape.length;
+  const frag = document.createDocumentFragment();
+  for (let off = -span; off <= span; off++) {
+    const idx = ((interp.dp + off) % len + len) % len;
+    const cellEl = document.createElement('div');
+    cellEl.className = 'mem-cell' + (off === 0 ? ' active' : '') + (idx % 2 === 1 ? ' odd' : ' even');
+    const idxEl = document.createElement('div');
+    idxEl.className = 'mem-idx';
+    idxEl.textContent = idx;
+    const valEl = document.createElement('div');
+    valEl.className = 'mem-val';
+    valEl.textContent = interp.tape[idx];
+    cellEl.appendChild(idxEl);
+    cellEl.appendChild(valEl);
+    frag.appendChild(cellEl);
+  }
+  memoryView.appendChild(frag);
+}
+
+function updateOutput() {
+  outputView.textContent = interp ? interp.output : '';
+}
+
+function updateRunButtons() {
+  const halted = !interp || interp.halted;
+  stepBtn.disabled = halted;
+  runEndBtn.disabled = halted;
+  runBtn.disabled = halted && !running;
+  runBtn.textContent = running ? 'Pause' : 'Run';
+}
+
+function loadProgram() {
+  stopRun();
+  switchSubtab('run');
+  const src = sourceEditor.value;
+  try {
+    interp = new BrainFreeze(src);
+  } catch (e) {
+    interp = null;
+    gridView.innerHTML = '';
+    cellMap = new Map();
+    statusEl.textContent = 'Failed to load program.';
+    errorEl.textContent = e.message;
+    errorEl.style.display = 'block';
+    updateRunButtons();
+    return;
+  }
+  buildGrid(src);
+  resetVisualState();
+  if (interp.pc) {
+    const key = `${interp.pc.row},${interp.pc.col}`;
+    const el = cellMap.get(key);
+    if (el) el.classList.add('pc');
+  }
+  updateStatus();
+  updateMemoryView();
+  updateOutput();
+  updateRunButtons();
+}
+
+function doStep() {
+  if (!interp || interp.halted) return;
+  const prevPc = interp.pc;
+  interp.step();
+  markStep(prevPc);
+  updateStatus();
+  updateMemoryView();
+  updateOutput();
+  updateRunButtons();
+}
+
+function tick() {
+  if (!interp || interp.halted) { stopRun(); return; }
+  const n = parseInt(speedSlider.value, 10) || 1;
+  for (let i = 0; i < n && interp && !interp.halted; i++) {
+    const prevPc = interp.pc;
+    interp.step();
+    markStep(prevPc);
+  }
+  updateStatus();
+  updateMemoryView();
+  updateOutput();
+  if (!interp || interp.halted) stopRun();
+  updateRunButtons();
+}
+
+function startRun() {
+  if (!interp || interp.halted || running) return;
+  running = true;
+  updateRunButtons();
+  runTimer = setInterval(tick, 55);
+}
+
+function stopRun() {
+  running = false;
+  if (runTimer) { clearInterval(runTimer); runTimer = null; }
+  updateRunButtons();
+}
+
+function toggleRun() {
+  if (running) stopRun(); else startRun();
+}
+
+function runToEnd() {
+  stopRun();
+  if (!interp || interp.halted) return;
+  interp.run(2_000_000);
+  cellMap.forEach((el, key) => {
+    el.classList.remove('pc', 'halt', 'errorcell');
+    el.style.opacity = '';
+    if (interp.visited.has(key)) el.classList.add('visited');
+  });
+  hotTrail = [];
+  if (interp.pc) {
+    const key = `${interp.pc.row},${interp.pc.col}`;
+    const el = cellMap.get(key);
+    if (el) {
+      el.classList.remove('visited');
+      el.classList.add(interp.error ? 'errorcell' : 'halt');
+      el.scrollIntoView({ block: 'center', inline: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    }
+  }
+  updateStatus();
+  updateMemoryView();
+  updateOutput();
+  updateRunButtons();
+}
+
+// ---- Transpiler panel ----
+
+function doTranspile() {
+  const src = bfInput.value;
+  let grid;
+  try {
+    grid = transpile(src);
+  } catch (e) {
+    transpileOutput.value = '';
+    transpileStatus.textContent = 'Error: ' + e.message;
+    transpileStatus.className = 'transpile-status error';
+    loadTranspiledBtn.disabled = true;
+    return;
+  }
+  let check;
+  try {
+    check = new BrainFreeze(grid);
+    check.run(2_000_000);
+  } catch (e) {
+    check = { error: e.message };
+  }
+  const rows = grid.split('\n');
+  const cols = Math.max(...rows.map((r) => r.length));
+  if (check.error) {
+    transpileOutput.value = grid;
+    transpileStatus.textContent = `Generated a ${rows.length}\u00D7${cols} grid, but self-check failed: ${check.error} — this is a transpiler bug, not a problem with your BF source.`;
+    transpileStatus.className = 'transpile-status error';
+    loadTranspiledBtn.disabled = false;
+  } else {
+    transpileOutput.value = grid;
+    transpileStatus.textContent = `Generated a ${rows.length}\u00D7${cols} grid \u2014 verified clean in ${check.steps} steps, output: ${JSON.stringify(check.output)}`;
+    transpileStatus.className = 'transpile-status ok';
+    loadTranspiledBtn.disabled = false;
+  }
+}
+
+function loadTranspiledIntoInterpreter() {
+  sourceEditor.value = transpileOutput.value;
+  switchTab('interpreter');
+  loadProgram();
+}
+
+// ---- Tabs ----
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === tab + '-panel'));
+}
+
+document.querySelectorAll('.tab-btn').forEach((b) => {
+  b.addEventListener('click', () => switchTab(b.dataset.tab));
+});
+
+function switchSubtab(tab) {
+  document.querySelectorAll('.subtab-btn').forEach((b) => b.classList.toggle('active', b.dataset.subtab === tab));
+  document.querySelectorAll('.interp-subpanel').forEach((p) => p.classList.toggle('active', p.id === tab + '-subpanel'));
+}
+
+document.querySelectorAll('.subtab-btn').forEach((b) => {
+  b.addEventListener('click', () => switchSubtab(b.dataset.subtab));
+});
+document.getElementById('backToEditBtn').addEventListener('click', () => switchSubtab('edit'));
+
+// ---- Wiring ----
+
+loadBtn.addEventListener('click', loadProgram);
+resetBtn.addEventListener('click', loadProgram);
+stepBtn.addEventListener('click', doStep);
+runBtn.addEventListener('click', toggleRun);
+runEndBtn.addEventListener('click', runToEnd);
+speedSlider.addEventListener('input', () => { speedLabel.textContent = speedSlider.value; });
+
+transpileBtn.addEventListener('click', doTranspile);
+loadTranspiledBtn.addEventListener('click', loadTranspiledIntoInterpreter);
+
+document.getElementById('ex-straight').addEventListener('click', () => {
+  sourceEditor.value = transpile('+'.repeat(65) + '.');
+  loadProgram();
+});
+document.getElementById('ex-loop').addEventListener('click', () => {
+  sourceEditor.value = transpile('++++++++[>++++++++<-]>+.');
+  loadProgram();
+});
+document.getElementById('ex-hello').addEventListener('click', () => {
+  sourceEditor.value = transpile('++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.');
+  loadProgram();
+});
+
+// ---- Init ----
+
+sourceEditor.value = transpile('++++++++[>++++++++<-]>+.');
+loadProgram();
+bfInput.value = '++++++++[>++++++++<-]>+.';
+</script>
+</body>
+</html>
